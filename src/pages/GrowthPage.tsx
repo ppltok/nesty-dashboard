@@ -70,15 +70,22 @@ export default function GrowthPage() {
         )}
       </div>
 
-      {/* GA4 Placeholder */}
+      {/* GA4 Link */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
-        <h2 className="text-lg font-medium text-gray-900 mb-2">Google Analytics (GA4)</h2>
-        <div className="rounded-lg bg-gray-50 border border-dashed border-gray-300 p-8 text-center">
-          <div className="text-gray-400 text-sm">
-            GA4 integration not yet connected. Traffic sources, acquisition channels, and behavior
-            analytics will appear here once integrated.
-          </div>
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="text-lg font-medium text-gray-900">Google Analytics (GA4)</h2>
+          <a
+            href="https://analytics.google.com/analytics/web/#/p477498420/reports/intelligenthome"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Open GA4 Dashboard →
+          </a>
         </div>
+        <p className="text-sm text-gray-500">
+          GA4 is tracking page views on dashboard.nestyil.com (ID: G-VFSHSL1MP9). For traffic sources, acquisition channels, and behavior analytics, view the full report in Google Analytics.
+        </p>
       </div>
     </div>
   )
