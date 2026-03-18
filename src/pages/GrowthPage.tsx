@@ -1,0 +1,85 @@
+import { useOverview, useDailySignups } from '@/hooks/useDashboardData'
+import { useDateRange } from '@/contexts/DateRangeContext'
+import { KPICard } from '@/components/shared/KPICard'
+import { PageSkeleton } from '@/components/shared/LoadingSkeleton'
+import { TrendChart } from '@/components/charts/TrendChart'
+import { formatNumber, formatPercent } from '@/lib/formatters'
+import { UserPlus, UserCheck, BarChart3 } from 'lucide-react'
+
+export default function GrowthPage() {
+  const { dateRange } = useDateRange()
+  const overview = useOverview(dateRange.start, dateRange.end)
+  const signups = useDailySignups()
+
+  if (overview.isLoading) return <PageSkeleton />
+  if (overview.error)
+    return <div className="p-6 text-red-600">Failed to load growth data: {overview.error.message}</div>
+
+  const data = overview.data!
+  const onboardingRate = data.new_users > 0 ? (data.onboarded_users / data.new_users) * 100 : 0
+
+  const trendData = (signups.data ?? []).filter(d => {
+    const date = new Date(d.day)
+    return date >= dateRange.start && date <= dateRange.end
+  }).map((d) => ({
+    day: d.day,
+    signups: d.signups,
+    onboarded: d.onboarded,
+  }))
+
+  return (
+    <div className="space-y-6">
+      {/* KPI Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <KPICard
+          title="New Signups"
+          value={formatNumber(data.new_users)}
+          icon={<UserPlus className="h-5 w-5 text-blue-500" />}
+          tooltip="Number of new user registrations in the selected time period."
+        />
+        <KPICard
+          title="Onboarding Rate"
+          value={formatPercent(onboardingRate)}
+          icon={<UserCheck className="h-5 w-5 text-green-500" />}
+          tooltip="Percentage of signed-up users who completed the onboarding flow (set due date, created registry)."
+        />
+        <KPICard
+          title="Onboarded Users"
+          value={formatNumber(data.onboarded_users)}
+          icon={<BarChart3 className="h-5 w-5 text-indigo-500" />}
+          tooltip="Total users who completed onboarding in the selected time period."
+        />
+      </div>
+
+      {/* Daily Signups Trend */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
+        <h2 className="text-lg font-medium text-gray-900 mb-4">Daily Signups & Onboarded</h2>
+        {signups.isLoading ? (
+          <div className="h-64 flex items-center justify-center text-gray-400">Loading...</div>
+        ) : trendData.length > 0 ? (
+          <TrendChart
+            data={trendData}
+            height={350}
+            lines={[
+              { key: 'signups', color: '#6366f1', label: 'Signups' },
+              { key: 'onboarded', color: '#10b981', label: 'Onboarded' },
+            ]}
+          />
+        ) : (
+          <div className="h-64 flex items-center justify-center text-gray-400">No data</div>
+        )}
+      </div>
+
+      {/* GA4 Placeholder */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
+        <h2 className="text-lg font-medium text-gray-900 mb-2">Google Analytics (GA4)</h2>
+        <div className="rounded-lg bg-gray-50 border border-dashed border-gray-300 p-8 text-center">
+          <div className="text-gray-400 text-sm">
+            GA4 integration not yet connected. Traffic sources, acquisition channels, and behavior
+            analytics will appear here once integrated.
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}

@@ -1,0 +1,190 @@
+import { useQuery } from '@tanstack/react-query'
+import { supabase } from '@/lib/supabase'
+import type {
+  DashboardOverview,
+  FunnelStage,
+  StoreBreakdown,
+  CategoryBreakdown,
+  RegistryEconomics,
+  ExtensionMetrics,
+  GiftGiverInsights,
+  PregnancyTimeline,
+  DailySignups,
+  DailyItems,
+  DailyGifts,
+  DashboardUser,
+} from '@/types/dashboard'
+
+export function useOverview(start: Date, end: Date) {
+  return useQuery<DashboardOverview>({
+    queryKey: ['overview', start.toISOString(), end.toISOString()],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('get_dashboard_overview', {
+        period_start: start.toISOString(),
+        period_end: end.toISOString(),
+      })
+      if (error) throw error
+      return data as DashboardOverview
+    },
+    staleTime: 60_000,
+  })
+}
+
+export function useFunnel() {
+  return useQuery<FunnelStage[]>({
+    queryKey: ['funnel'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('mv_funnel_snapshot')
+        .select('*')
+        .order('stage_order')
+      if (error) throw error
+      return data as FunnelStage[]
+    },
+    staleTime: 300_000,
+  })
+}
+
+export function useStores() {
+  return useQuery<StoreBreakdown[]>({
+    queryKey: ['stores'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('mv_store_breakdown')
+        .select('*')
+        .order('item_count', { ascending: false })
+      if (error) throw error
+      return data as StoreBreakdown[]
+    },
+    staleTime: 300_000,
+  })
+}
+
+export function useCategories() {
+  return useQuery<CategoryBreakdown[]>({
+    queryKey: ['categories'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('mv_category_breakdown')
+        .select('*')
+        .order('item_count', { ascending: false })
+      if (error) throw error
+      return data as CategoryBreakdown[]
+    },
+    staleTime: 300_000,
+  })
+}
+
+export function useEconomics() {
+  return useQuery<RegistryEconomics>({
+    queryKey: ['economics'],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('get_registry_economics')
+      if (error) throw error
+      return data as RegistryEconomics
+    },
+    staleTime: 300_000,
+  })
+}
+
+export function useExtensionMetrics() {
+  return useQuery<ExtensionMetrics>({
+    queryKey: ['extension'],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('get_extension_metrics')
+      if (error) throw error
+      return data as ExtensionMetrics
+    },
+    staleTime: 300_000,
+  })
+}
+
+export function useGiftInsights() {
+  return useQuery<GiftGiverInsights>({
+    queryKey: ['gifts'],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('get_gift_giver_insights')
+      if (error) throw error
+      return data as GiftGiverInsights
+    },
+    staleTime: 300_000,
+  })
+}
+
+export function usePregnancyTimeline() {
+  return useQuery<PregnancyTimeline>({
+    queryKey: ['timeline'],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('get_pregnancy_timeline')
+      if (error) throw error
+      return data as PregnancyTimeline
+    },
+    staleTime: 300_000,
+  })
+}
+
+export function useDailySignups() {
+  return useQuery<DailySignups[]>({
+    queryKey: ['daily-signups'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('mv_daily_signups')
+        .select('*')
+        .order('day', { ascending: true })
+      if (error) throw error
+      return data as DailySignups[]
+    },
+    staleTime: 300_000,
+  })
+}
+
+export function useDailyItems() {
+  return useQuery<DailyItems[]>({
+    queryKey: ['daily-items'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('mv_daily_items')
+        .select('*')
+        .order('day', { ascending: true })
+      if (error) throw error
+      return data as DailyItems[]
+    },
+    staleTime: 300_000,
+  })
+}
+
+export function useDailyGifts() {
+  return useQuery<DailyGifts[]>({
+    queryKey: ['daily-gifts'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('mv_daily_gifts')
+        .select('*')
+        .order('day', { ascending: true })
+      if (error) throw error
+      return data as DailyGifts[]
+    },
+    staleTime: 300_000,
+  })
+}
+
+export function useDashboardUsers() {
+  return useQuery<DashboardUser[]>({
+    queryKey: ['dashboard-users'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('dashboard_access')
+        .select('*')
+        .order('created_at', { ascending: true })
+      if (error) throw error
+      return data as DashboardUser[]
+    },
+  })
+}
+
+export function useRefreshViews() {
+  return async () => {
+    const { error } = await supabase.rpc('refresh_dashboard_views')
+    if (error) throw error
+  }
+}
