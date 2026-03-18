@@ -1,19 +1,28 @@
 import { useDateRange } from '@/contexts/DateRangeContext'
 import { useAuth } from '@/contexts/AuthContext'
-import { CalendarDays, LogOut } from 'lucide-react'
+import { CalendarDays, LogOut, Menu } from 'lucide-react'
 import { cn } from '@/lib/cn'
 
 interface HeaderProps {
   title: string
+  onMenuClick: () => void
 }
 
-export function Header({ title }: HeaderProps) {
+export function Header({ title, onMenuClick }: HeaderProps) {
   const { dateRange, setDateRange, presets } = useDateRange()
   const { access, user, signOut } = useAuth()
 
   return (
-    <header className="flex items-center justify-between h-15 px-6 bg-white border-b border-gray-200">
-      <h1 className="text-lg font-semibold text-gray-900">{title}</h1>
+    <header className="flex items-center justify-between h-15 px-4 sm:px-6 bg-white border-b border-gray-200">
+      <div className="flex items-center">
+        <button
+          onClick={onMenuClick}
+          className="lg:hidden p-1.5 text-gray-500 hover:bg-gray-100 rounded-lg mr-2"
+        >
+          <Menu size={20} />
+        </button>
+        <h1 className="text-lg font-semibold text-gray-900">{title}</h1>
+      </div>
 
       <div className="flex items-center gap-4">
         <div className="relative flex items-center gap-2">

@@ -32,16 +32,35 @@ const bottomItems = [
   { to: '/settings', icon: Settings, label: 'Settings' },
 ]
 
-export function Sidebar() {
+interface SidebarProps {
+  isOpen: boolean
+  onClose: () => void
+}
+
+export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const [collapsed, setCollapsed] = useState(false)
 
   return (
-    <aside
-      className={cn(
-        'flex flex-col h-screen bg-white border-r border-gray-200 transition-all duration-200',
-        collapsed ? 'w-16' : 'w-60'
+    <>
+      {/* Mobile backdrop */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/30 lg:hidden"
+          onClick={onClose}
+        />
       )}
-    >
+
+      <aside
+        className={cn(
+          'flex flex-col h-screen bg-white border-r border-gray-200 transition-all duration-200',
+          // Desktop: static sidebar
+          'lg:relative lg:translate-x-0',
+          collapsed ? 'lg:w-16' : 'lg:w-60',
+          // Mobile: fixed overlay
+          'fixed inset-y-0 left-0 z-50',
+          isOpen ? 'translate-x-0 w-60' : '-translate-x-full lg:translate-x-0',
+        )}
+      >
       {/* Logo */}
       <div className="flex items-center justify-between h-15 px-4 border-b border-gray-100">
         <div className="flex items-center gap-2">
@@ -67,6 +86,7 @@ export function Sidebar() {
             key={item.to}
             to={item.to}
             end={item.to === '/'}
+            onClick={onClose}
             className={({ isActive }) =>
               cn(
                 'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
@@ -88,6 +108,7 @@ export function Sidebar() {
           <NavLink
             key={item.to}
             to={item.to}
+            onClick={onClose}
             className={({ isActive }) =>
               cn(
                 'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
@@ -102,6 +123,7 @@ export function Sidebar() {
           </NavLink>
         ))}
       </div>
-    </aside>
+      </aside>
+    </>
   )
 }
