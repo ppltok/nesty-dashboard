@@ -6,6 +6,7 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
+  LabelList,
 } from 'recharts'
 
 interface TrendLine {
@@ -22,9 +23,12 @@ interface TrendChartProps {
 }
 
 export function TrendChart({ data, lines, xKey = 'day', height = 300 }: TrendChartProps) {
+  // Show labels only when data points are sparse enough to avoid overlap
+  const showLabels = data.length <= 30
+
   return (
     <ResponsiveContainer width="100%" height={height}>
-      <LineChart data={data} margin={{ top: 4, right: 8, bottom: 0, left: -12 }}>
+      <LineChart data={data} margin={{ top: 16, right: 24, bottom: 0, left: -12 }}>
         <XAxis
           dataKey={xKey}
           tick={{ fontSize: 12, fill: '#9ca3af' }}
@@ -59,9 +63,18 @@ export function TrendChart({ data, lines, xKey = 'day', height = 300 }: TrendCha
             name={line.label}
             stroke={line.color}
             strokeWidth={2}
-            dot={false}
-            activeDot={{ r: 4, strokeWidth: 0 }}
-          />
+            dot={{ r: 3, fill: line.color, strokeWidth: 0 }}
+            activeDot={{ r: 5, strokeWidth: 0 }}
+          >
+            {showLabels && (
+              <LabelList
+                dataKey={line.key}
+                position="top"
+                style={{ fontSize: 10, fill: '#6b7280', fontWeight: 500 }}
+                offset={8}
+              />
+            )}
+          </Line>
         ))}
       </LineChart>
     </ResponsiveContainer>

@@ -81,6 +81,12 @@ export function useEconomics() {
     queryFn: async () => {
       const { data, error } = await supabase.rpc('get_registry_economics')
       if (error) throw error
+      if (!data) return {
+        total_gmv: 0, avg_registry_value: 0, median_registry_value: 0,
+        avg_gift_value: 0, avg_items_per_registry: 0, avg_gifts_per_registry: 0,
+        completion_rate: 0, total_registries_with_items: 0, total_gifts_given: 0,
+        unique_gift_givers: 0, value_distribution: [],
+      } satisfies RegistryEconomics
       return data as RegistryEconomics
     },
     staleTime: 300_000,
@@ -105,6 +111,12 @@ export function useGiftInsights() {
     queryFn: async () => {
       const { data, error } = await supabase.rpc('get_gift_giver_insights')
       if (error) throw error
+      if (!data) return {
+        total_purchases: 0, confirmed: 0, pending: 0, cancelled: 0, expired: 0,
+        confirmation_rate: 0, avg_hours_to_confirm: 0, surprise_rate: 0,
+        message_rate: 0, unique_givers: 0, avg_gifts_per_giver: 0,
+        gift_category_distribution: [],
+      } satisfies GiftGiverInsights
       return data as GiftGiverInsights
     },
     staleTime: 300_000,
@@ -117,6 +129,10 @@ export function usePregnancyTimeline() {
     queryFn: async () => {
       const { data, error } = await supabase.rpc('get_pregnancy_timeline')
       if (error) throw error
+      if (!data) return {
+        items_by_week: [], gifts_by_week: [],
+        avg_first_item_week: null, due_date_distribution: [],
+      } satisfies PregnancyTimeline
       return data as PregnancyTimeline
     },
     staleTime: 300_000,
@@ -179,6 +195,25 @@ export function useDashboardUsers() {
       if (error) throw error
       return data as DashboardUser[]
     },
+  })
+}
+
+export function useCategoryItems(category: string | null) {
+  return useQuery({
+    queryKey: ['category-items', category],
+    queryFn: async () => {
+      if (!category) return []
+      const { data, error } = await supabase
+        .from('items')
+        .select('name, price, store_name, quantity, quantity_received, image_url, original_url')
+        .eq('category', category)
+        .order('quantity', { ascending: false })
+        .limit(5)
+      if (error) throw error
+      return data ?? []
+    },
+    enabled: !!category,
+    staleTime: 300_000,
   })
 }
 

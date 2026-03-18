@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { useDashboardUsers, useRefreshViews } from '@/hooks/useDashboardData'
 import { PageSkeleton } from '@/components/shared/LoadingSkeleton'
 import { supabase } from '@/lib/supabase'
-import { RefreshCw, UserPlus, Shield, Eye } from 'lucide-react'
+import { RefreshCw, UserPlus, Shield, Eye, Download } from 'lucide-react'
+import { downloadCSV } from '@/lib/csv'
 
 interface Toast {
   message: string
@@ -148,8 +149,20 @@ export default function SettingsPage() {
 
       {/* Users Table */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
           <h2 className="text-lg font-medium text-gray-900">Access Management</h2>
+          <button
+            onClick={() => downloadCSV((users ?? []).map(u => ({
+              email: u.email,
+              display_name: u.display_name ?? '',
+              role: u.role,
+              created_at: new Date(u.created_at).toLocaleDateString(),
+            })), 'dashboard-users')}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors"
+          >
+            <Download size={14} />
+            Export CSV
+          </button>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">

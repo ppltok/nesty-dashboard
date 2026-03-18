@@ -11,7 +11,21 @@ export default function GiftsPage() {
   if (isLoading) return <PageSkeleton />
   if (error) return <div className="p-6 text-red-600">Failed to load gift insights: {error.message}</div>
 
-  const gifts = data!
+  const raw = data!
+  const gifts = {
+    total_purchases: raw.total_purchases ?? 0,
+    confirmed: raw.confirmed ?? 0,
+    pending: raw.pending ?? 0,
+    cancelled: raw.cancelled ?? 0,
+    expired: raw.expired ?? 0,
+    confirmation_rate: raw.confirmation_rate ?? 0,
+    avg_hours_to_confirm: raw.avg_hours_to_confirm ?? 0,
+    surprise_rate: raw.surprise_rate ?? 0,
+    message_rate: raw.message_rate ?? 0,
+    unique_givers: raw.unique_givers ?? 0,
+    avg_gifts_per_giver: raw.avg_gifts_per_giver ?? 0,
+    gift_category_distribution: raw.gift_category_distribution ?? [],
+  }
 
   const statusData = [
     { name: 'Confirmed', value: gifts.confirmed },
@@ -20,7 +34,7 @@ export default function GiftsPage() {
     { name: 'Expired', value: gifts.expired },
   ].filter((d) => d.value > 0)
 
-  const categoryData = (gifts.gift_category_distribution ?? []).map((c) => ({
+  const categoryData = gifts.gift_category_distribution.map((c) => ({
     name: c.category,
     value: c.gift_count,
   }))

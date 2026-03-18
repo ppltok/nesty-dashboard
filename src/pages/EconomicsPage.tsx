@@ -13,16 +13,29 @@ export default function EconomicsPage() {
   if (economics.error)
     return <div className="p-6 text-red-600">Failed to load economics: {economics.error.message}</div>
 
-  const eco = economics.data!
+  const raw = economics.data!
+  const eco = {
+    total_gmv: raw.total_gmv ?? 0,
+    avg_registry_value: raw.avg_registry_value ?? 0,
+    median_registry_value: raw.median_registry_value ?? 0,
+    avg_gift_value: raw.avg_gift_value ?? 0,
+    avg_items_per_registry: raw.avg_items_per_registry ?? 0,
+    avg_gifts_per_registry: raw.avg_gifts_per_registry ?? 0,
+    completion_rate: raw.completion_rate ?? 0,
+    total_registries_with_items: raw.total_registries_with_items ?? 0,
+    total_gifts_given: raw.total_gifts_given ?? 0,
+    unique_gift_givers: raw.unique_gift_givers ?? 0,
+    value_distribution: raw.value_distribution ?? [],
+  }
 
-  const valueDistribution = (eco.value_distribution ?? []).map((d) => ({
+  const valueDistribution = eco.value_distribution.map((d) => ({
     name: d.bucket,
     value: d.registry_count,
   }))
 
   const categoryPurchaseRate = (categories.data ?? []).map((c) => ({
     name: c.category,
-    value: Number(c.purchase_rate.toFixed(1)),
+    value: Number((c.purchase_rate ?? 0).toFixed(1)),
   }))
 
   return (

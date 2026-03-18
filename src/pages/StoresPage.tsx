@@ -1,10 +1,12 @@
 import { useState, useMemo } from 'react'
 import { useStores } from '@/hooks/useDashboardData'
+import type { StoreBreakdown } from '@/types/dashboard'
 import { PageSkeleton } from '@/components/shared/LoadingSkeleton'
 import { BarChartComponent } from '@/components/charts/BarChartComponent'
 import { DonutChart } from '@/components/charts/DonutChart'
 import { formatNumber, formatCurrency, formatPercent } from '@/lib/formatters'
-import { ArrowUpDown } from 'lucide-react'
+import { ArrowUpDown, Download } from 'lucide-react'
+import { downloadCSV } from '@/lib/csv'
 
 type SortKey = 'item_count' | 'total_value' | 'avg_price' | 'purchase_rate' | 'registry_count'
 
@@ -15,16 +17,40 @@ export default function StoresPage() {
 
   const stores = data ?? []
 
+  // Merge duplicates that share the same store_domain but different display names
+  const deduped = useMemo(() => {
+    const map = new Map<string, StoreBreakdown>()
+    for (const s of stores) {
+      const existing = map.get(s.store_domain)
+      if (existing) {
+        existing.item_count += s.item_count
+        existing.registry_count += s.registry_count
+        existing.total_value += s.total_value
+        existing.total_purchased += s.total_purchased
+        existing.total_wanted += s.total_wanted
+        existing.avg_price = existing.item_count > 0
+          ? existing.total_value / existing.item_count
+          : 0
+        existing.purchase_rate = existing.total_wanted > 0
+          ? Math.round((existing.total_purchased / existing.total_wanted) * 1000) / 10
+          : 0
+      } else {
+        map.set(s.store_domain, { ...s })
+      }
+    }
+    return Array.from(map.values())
+  }, [stores])
+
   const sorted = useMemo(() => {
-    return [...stores].sort((a, b) => {
+    return [...deduped].sort((a, b) => {
       const diff = a[sortKey] - b[sortKey]
       return sortAsc ? diff : -diff
     })
-  }, [stores, sortKey, sortAsc])
+  }, [deduped, sortKey, sortAsc])
 
   const chartsData = useMemo(
-    () => stores.filter((s) => s.store_domain !== 'manual'),
-    [stores]
+    () => [...deduped].filter((s) => s.store_domain !== 'manual').sort((a, b) => b.item_count - a.item_count),
+    [deduped]
   )
 
   const top10 = chartsData.slice(0, 10).map((s) => ({
@@ -86,8 +112,22 @@ export default function StoresPage() {
 
       {/* Store Table */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
           <h2 className="text-lg font-medium text-gray-900">All Stores</h2>
+          <button
+            onClick={() => downloadCSV(sorted.map(s => ({
+              store_display_name: s.store_display_name,
+              item_count: s.item_count,
+              total_value: s.total_value,
+              avg_price: s.avg_price,
+              purchase_rate: s.purchase_rate,
+              registry_count: s.registry_count,
+            })), 'stores')}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors"
+          >
+            <Download size={14} />
+            Export CSV
+          </button>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">

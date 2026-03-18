@@ -2,6 +2,8 @@ import { useFunnel } from '@/hooks/useDashboardData'
 import { PageSkeleton } from '@/components/shared/LoadingSkeleton'
 import { FunnelChart } from '@/components/charts/FunnelChart'
 import { formatNumber, formatPercent } from '@/lib/formatters'
+import { Download } from 'lucide-react'
+import { downloadCSV } from '@/lib/csv'
 
 const STAGE_LABELS: Record<string, string> = {
   signups: 'Signed Up',
@@ -36,8 +38,25 @@ export default function FunnelPage() {
 
       {/* Conversion Table */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
           <h2 className="text-lg font-medium text-gray-900">Conversion Details</h2>
+          <button
+            onClick={() => downloadCSV(stages.map((s, i) => {
+              const prevCount = i > 0 ? stages[i - 1].count : s.count
+              const fromPrevious = prevCount > 0 ? ((s.count / prevCount) * 100).toFixed(1) + '%' : '0%'
+              const fromSignup = signupCount > 0 ? ((s.count / signupCount) * 100).toFixed(1) + '%' : '0%'
+              return {
+                stage: STAGE_LABELS[s.stage] ?? s.stage,
+                count: s.count,
+                conversion_from_previous: i === 0 ? '-' : fromPrevious,
+                conversion_from_signup: fromSignup,
+              }
+            }), 'funnel')}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors"
+          >
+            <Download size={14} />
+            Export CSV
+          </button>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
