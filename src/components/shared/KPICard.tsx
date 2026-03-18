@@ -38,10 +38,10 @@ export function KPICard({
                   onMouseLeave={() => setShowTooltip(false)}
                 />
                 {showTooltip && (
-                  <div className="absolute z-50 bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 px-3 py-2 text-xs text-gray-700 bg-white border border-gray-200 rounded-lg shadow-lg leading-relaxed">
+                  <div className="absolute z-50 top-full left-1/2 -translate-x-1/2 mt-2 w-56 px-3 py-2 text-xs text-gray-700 bg-white border border-gray-200 rounded-lg shadow-lg leading-relaxed">
                     {tooltip}
-                    <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-px border-4 border-transparent border-t-gray-200" />
-                    <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-[5px] border-4 border-transparent border-t-white" />
+                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-[-1px] border-4 border-transparent border-b-gray-200" />
+                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-[-5px] border-4 border-transparent border-b-white" />
                   </div>
                 )}
               </div>
