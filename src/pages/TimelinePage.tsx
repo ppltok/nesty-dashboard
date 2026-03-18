@@ -14,20 +14,32 @@ export default function TimelinePage() {
 
   const timeline = data!
 
-  const itemsByWeek = (timeline.items_by_week ?? []).map((w) => ({
-    name: `W${w.weeks_before_due}`,
-    value: w.items_added,
-  }))
+  // Filter to sane range (0-42 weeks) — SQL should do this but some edge cases leak through
+  const itemsByWeek = (timeline.items_by_week ?? [])
+    .filter((w) => w.weeks_before_due >= 0 && w.weeks_before_due <= 42)
+    .sort((a, b) => b.weeks_before_due - a.weeks_before_due)
+    .map((w) => ({
+      name: `${w.weeks_before_due}w`,
+      value: w.items_added,
+    }))
 
-  const giftsByWeek = (timeline.gifts_by_week ?? []).map((w) => ({
-    name: `W${w.weeks_before_due}`,
-    value: w.gifts_received,
-  }))
+  const giftsByWeek = (timeline.gifts_by_week ?? [])
+    .filter((w) => w.weeks_before_due >= 0 && w.weeks_before_due <= 42)
+    .sort((a, b) => b.weeks_before_due - a.weeks_before_due)
+    .map((w) => ({
+      name: `${w.weeks_before_due}w`,
+      value: w.gifts_received,
+    }))
 
   const dueDateDist = (timeline.due_date_distribution ?? []).map((d) => ({
     name: d.month,
     value: d.user_count,
   }))
+
+  // Clamp avg_first_item_week to sane range
+  const avgWeek = timeline.avg_first_item_week != null && timeline.avg_first_item_week >= 0 && timeline.avg_first_item_week <= 42
+    ? timeline.avg_first_item_week
+    : null
 
   return (
     <div className="space-y-6">
@@ -35,12 +47,9 @@ export default function TimelinePage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <KPICard
           title="Avg First Item Week"
-          value={
-            timeline.avg_first_item_week != null
-              ? `Week ${timeline.avg_first_item_week.toFixed(0)} before due`
-              : 'N/A'
-          }
+          value={avgWeek != null ? `${avgWeek.toFixed(0)} weeks before due` : 'N/A'}
           icon={<Calendar className="h-5 w-5 text-indigo-500" />}
+          tooltip="Average number of weeks before the due date when parents add their first registry item."
         />
         <KPICard
           title="Users with Due Date"
@@ -48,6 +57,7 @@ export default function TimelinePage() {
             (timeline.due_date_distribution ?? []).reduce((s, d) => s + d.user_count, 0)
           )}
           icon={<Baby className="h-5 w-5 text-pink-500" />}
+          tooltip="Number of users who have set a due date in their profile."
         />
       </div>
 
