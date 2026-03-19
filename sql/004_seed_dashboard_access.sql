@@ -6,6 +6,6 @@
 
 INSERT INTO dashboard_access (email, display_name, role)
 VALUES
-  ('tom@ppltok.com', 'Jack', 'admin'),
+  ('tom@ppltok.com', 'Tom', 'admin'),
   ('yaniv.bl@gmail.com', 'Yaniv', 'admin')
 ON CONFLICT (email) DO NOTHING;
