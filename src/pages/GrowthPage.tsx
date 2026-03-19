@@ -1,22 +1,26 @@
-import { useOverview, useDailySignups } from '@/hooks/useDashboardData'
+import { useGrowthMetrics, useDailySignups } from '@/hooks/useDashboardData'
 import { useDateRange } from '@/contexts/DateRangeContext'
 import { KPICard } from '@/components/shared/KPICard'
 import { PageSkeleton } from '@/components/shared/LoadingSkeleton'
 import { TrendChart } from '@/components/charts/TrendChart'
 import { formatNumber, formatPercent } from '@/lib/formatters'
-import { UserPlus, UserCheck, BarChart3 } from 'lucide-react'
+import {
+  UserPlus, UserCheck, Zap, Share2, Puzzle, RotateCcw, Clock,
+} from 'lucide-react'
 
 export default function GrowthPage() {
   const { dateRange } = useDateRange()
-  const overview = useOverview(dateRange.start, dateRange.end)
+  const growth = useGrowthMetrics(dateRange.start, dateRange.end)
   const signups = useDailySignups()
 
-  if (overview.isLoading) return <PageSkeleton />
-  if (overview.error)
-    return <div className="p-6 text-red-600">Failed to load growth data: {overview.error.message}</div>
+  if (growth.isLoading) return <PageSkeleton />
+  if (growth.error)
+    return <div className="p-6 text-red-600">Failed to load growth data: {growth.error.message}</div>
 
-  const data = overview.data!
-  const onboardingRate = data.new_users > 0 ? (data.onboarded_users / data.new_users) * 100 : 0
+  const g = growth.data!
+  const onboardingRate = g.total_signups_period > 0
+    ? (g.onboarded_period / g.total_signups_period) * 100
+    : 0
 
   const trendData = (signups.data ?? []).filter(d => {
     const date = new Date(d.day)
@@ -29,11 +33,11 @@ export default function GrowthPage() {
 
   return (
     <div className="space-y-6">
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      {/* Row 1: Core signup metrics */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <KPICard
           title="New Signups"
-          value={formatNumber(data.new_users)}
+          value={formatNumber(g.total_signups_period)}
           icon={<UserPlus className="h-5 w-5 text-blue-500" />}
           tooltip="Number of new user registrations in the selected time period."
         />
@@ -44,10 +48,38 @@ export default function GrowthPage() {
           tooltip="Percentage of signed-up users who completed the onboarding flow (set due date, created registry)."
         />
         <KPICard
-          title="Onboarded Users"
-          value={formatNumber(data.onboarded_users)}
-          icon={<BarChart3 className="h-5 w-5 text-indigo-500" />}
-          tooltip="Total users who completed onboarding in the selected time period."
+          title="Activation Rate"
+          value={formatPercent(g.activation_rate)}
+          icon={<Zap className="h-5 w-5 text-amber-500" />}
+          tooltip="Percentage of users who added their first item within 7 days of signing up. A key early engagement signal."
+        />
+        <KPICard
+          title="Avg Time to First Item"
+          value={`${(g.avg_hours_to_first_item ?? 0).toFixed(0)}h`}
+          icon={<Clock className="h-5 w-5 text-cyan-500" />}
+          tooltip="Average hours between signup and adding the first item to a registry."
+        />
+      </div>
+
+      {/* Row 2: Engagement & retention */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <KPICard
+          title="7-Day Retention"
+          value={formatPercent(g.retention_7d)}
+          icon={<RotateCcw className="h-5 w-5 text-purple-500" />}
+          tooltip="Percentage of users who added an item 7+ days after signup. Only includes users who signed up at least 7 days ago."
+        />
+        <KPICard
+          title="Extension Adoption"
+          value={formatPercent(g.extension_install_rate)}
+          icon={<Puzzle className="h-5 w-5 text-indigo-500" />}
+          tooltip="Percentage of users (in this period) who used the Chrome extension to add at least one item."
+        />
+        <KPICard
+          title="Share Rate"
+          value={formatPercent(g.share_rate)}
+          icon={<Share2 className="h-5 w-5 text-pink-500" />}
+          tooltip="Percentage of users who completed onboarding and received a shareable registry link."
         />
       </div>
 

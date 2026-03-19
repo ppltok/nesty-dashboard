@@ -139,6 +139,39 @@ export function usePregnancyTimeline() {
   })
 }
 
+export interface GrowthMetrics {
+  activation_rate: number
+  activated_users: number
+  share_rate: number
+  extension_install_rate: number
+  extension_users_period: number
+  retention_7d: number
+  avg_hours_to_first_item: number
+  total_signups_period: number
+  onboarded_period: number
+}
+
+export function useGrowthMetrics(start: Date, end: Date) {
+  return useQuery<GrowthMetrics>({
+    queryKey: ['growth-metrics', start.toISOString(), end.toISOString()],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('get_growth_metrics', {
+        period_start: start.toISOString(),
+        period_end: end.toISOString(),
+      })
+      if (error) throw error
+      if (!data) return {
+        activation_rate: 0, activated_users: 0, share_rate: 0,
+        extension_install_rate: 0, extension_users_period: 0,
+        retention_7d: 0, avg_hours_to_first_item: 0,
+        total_signups_period: 0, onboarded_period: 0,
+      } satisfies GrowthMetrics
+      return data as GrowthMetrics
+    },
+    staleTime: 60_000,
+  })
+}
+
 export function useDailySignups() {
   return useQuery<DailySignups[]>({
     queryKey: ['daily-signups'],
