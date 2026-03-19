@@ -13,6 +13,7 @@ const PAGE_TITLES: Record<string, string> = {
   '/gifts': 'Gift Giver Insights',
   '/growth': 'Growth & Acquisition',
   '/timeline': 'Pregnancy Timeline',
+  '/email': 'Email Marketing',
   '/settings': 'Settings',
 }
 

@@ -250,6 +250,45 @@ export function useCategoryItems(category: string | null) {
   })
 }
 
+export interface EmailMetrics {
+  total_sent: number
+  by_type: { type: string; count: number }[] | null
+  delivered: number
+  opened: number
+  clicked: number
+  bounced: number
+  failed: number
+  open_rate: number
+  click_rate: number
+  bounce_rate: number
+  unique_recipients: number
+  notification_opt_in: number
+  marketing_opt_in: number
+  daily_sends: { day: string; sent: number; opened: number; clicked: number }[] | null
+  nudge_stats: { type: string; sent: number; acted: number }[] | null
+}
+
+export function useEmailMetrics(start: Date, end: Date) {
+  return useQuery<EmailMetrics>({
+    queryKey: ['email-metrics', start.toISOString(), end.toISOString()],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('get_email_metrics', {
+        period_start: start.toISOString(),
+        period_end: end.toISOString(),
+      })
+      if (error) throw error
+      if (!data) return {
+        total_sent: 0, by_type: [], delivered: 0, opened: 0, clicked: 0,
+        bounced: 0, failed: 0, open_rate: 0, click_rate: 0, bounce_rate: 0,
+        unique_recipients: 0, notification_opt_in: 0, marketing_opt_in: 0,
+        daily_sends: [], nudge_stats: [],
+      } satisfies EmailMetrics
+      return data as EmailMetrics
+    },
+    staleTime: 60_000,
+  })
+}
+
 export function useRefreshViews() {
   return async () => {
     const { error } = await supabase.rpc('refresh_dashboard_views')

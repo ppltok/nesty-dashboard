@@ -10,6 +10,7 @@ import {
   Gift,
   TrendingUp,
   Calendar,
+  Mail,
   Settings,
   ChevronLeft,
   ChevronRight,
@@ -26,6 +27,7 @@ const navItems = [
   { to: '/gifts', icon: Gift, label: 'Gifts' },
   { to: '/growth', icon: TrendingUp, label: 'Growth' },
   { to: '/timeline', icon: Calendar, label: 'Timeline' },
+  { to: '/email', icon: Mail, label: 'Email' },
 ]
 
 const bottomItems = [

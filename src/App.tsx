@@ -13,6 +13,7 @@ import ExtensionPage from '@/pages/ExtensionPage'
 import GiftsPage from '@/pages/GiftsPage'
 import GrowthPage from '@/pages/GrowthPage'
 import TimelinePage from '@/pages/TimelinePage'
+import EmailPage from '@/pages/EmailPage'
 import SettingsPage from '@/pages/SettingsPage'
 import { Loader2 } from 'lucide-react'
 
@@ -55,6 +56,7 @@ function AuthGate() {
             <Route path="/gifts" element={<GiftsPage />} />
             <Route path="/growth" element={<GrowthPage />} />
             <Route path="/timeline" element={<TimelinePage />} />
+            <Route path="/email" element={<EmailPage />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
