@@ -30,6 +30,25 @@ export function useOverview(start: Date, end: Date) {
   })
 }
 
+export function usePreviousOverview(start: Date, end: Date) {
+  const durationMs = end.getTime() - start.getTime()
+  const prevEnd = new Date(start.getTime())
+  const prevStart = new Date(start.getTime() - durationMs)
+
+  return useQuery<DashboardOverview>({
+    queryKey: ['overview-prev', prevStart.toISOString(), prevEnd.toISOString()],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('get_dashboard_overview', {
+        period_start: prevStart.toISOString(),
+        period_end: prevEnd.toISOString(),
+      })
+      if (error) throw error
+      return data as DashboardOverview
+    },
+    staleTime: 60_000,
+  })
+}
+
 export function useFunnel() {
   return useQuery<FunnelStage[]>({
     queryKey: ['funnel'],

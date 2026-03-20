@@ -1,11 +1,11 @@
-import { useOverview, useFunnel, useStores, useCategories, useDailySignups } from '@/hooks/useDashboardData'
+import { useOverview, usePreviousOverview, useFunnel, useStores, useCategories, useDailySignups } from '@/hooks/useDashboardData'
 import { useDateRange } from '@/contexts/DateRangeContext'
 import { KPICard } from '@/components/shared/KPICard'
 import { PageSkeleton } from '@/components/shared/LoadingSkeleton'
 import { TrendChart } from '@/components/charts/TrendChart'
 import { DonutChart } from '@/components/charts/DonutChart'
 import { BarChartComponent } from '@/components/charts/BarChartComponent'
-import { formatNumber, formatCurrency, formatPercent } from '@/lib/formatters'
+import { formatNumber, formatCurrency, formatPercent, formatChange } from '@/lib/formatters'
 import {
   Gift,
   Users,
@@ -20,6 +20,7 @@ import {
 export default function OverviewPage() {
   const { dateRange } = useDateRange()
   const overview = useOverview(dateRange.start, dateRange.end)
+  const prev = usePreviousOverview(dateRange.start, dateRange.end)
   const funnel = useFunnel()
   const stores = useStores()
   const categories = useCategories()
@@ -29,6 +30,13 @@ export default function OverviewPage() {
   if (overview.error) return <div className="p-6 text-red-600">Failed to load overview: {overview.error.message}</div>
 
   const data = overview.data!
+  const prevData = prev.data
+
+  function trend(current: number, previous: number | undefined) {
+    if (previous == null) return {}
+    const { value, positive } = formatChange(current, previous)
+    return { change: value, changePositive: positive, subtitle: 'vs prev period' }
+  }
 
   const extensionAdoption =
     data.total_users_with_items > 0
@@ -57,24 +65,28 @@ export default function OverviewPage() {
           value={formatNumber(data.north_star_30d)}
           icon={<Gift className="h-5 w-5 text-pink-500" />}
           tooltip="Registries that received at least one confirmed gift in the last 30 days. This is our primary success metric."
+          {...trend(data.north_star_30d, prevData?.north_star_30d)}
         />
         <KPICard
           title="Total Users"
           value={formatNumber(data.total_users)}
           icon={<Users className="h-5 w-5 text-blue-500" />}
           tooltip="Total number of signed-up users across all time, including those who haven't completed onboarding."
+          {...trend(data.total_users, prevData?.total_users)}
         />
         <KPICard
           title="Active Registries"
           value={formatNumber(data.active_registries)}
           icon={<ClipboardList className="h-5 w-5 text-green-500" />}
           tooltip="Registries that have at least one item added. Indicates users who moved past onboarding."
+          {...trend(data.active_registries, prevData?.active_registries)}
         />
         <KPICard
           title="Platform GMV"
           value={formatCurrency(data.platform_gmv)}
           icon={<DollarSign className="h-5 w-5 text-yellow-500" />}
           tooltip="Gross Merchandise Value — total price of all items across all registries. Represents the platform's total addressable gift value."
+          {...trend(data.platform_gmv, prevData?.platform_gmv)}
         />
       </div>
 
@@ -85,24 +97,28 @@ export default function OverviewPage() {
           value={formatCurrency(data.avg_registry_value)}
           icon={<BarChart3 className="h-5 w-5 text-indigo-500" />}
           tooltip="Average total value (sum of item prices) per registry that has at least one item."
+          {...trend(data.avg_registry_value, prevData?.avg_registry_value)}
         />
         <KPICard
           title="Avg Items/Registry"
           value={formatNumber(data.avg_items_per_registry)}
           icon={<Package className="h-5 w-5 text-teal-500" />}
           tooltip="Average number of items added per active registry. Higher means more engaged users."
+          {...trend(data.avg_items_per_registry, prevData?.avg_items_per_registry)}
         />
         <KPICard
           title="Completion Rate"
           value={formatPercent(data.completion_rate)}
           icon={<CheckCircle className="h-5 w-5 text-emerald-500" />}
           tooltip="Percentage of wanted items that have been purchased (quantity_received / quantity). Measures how well registries convert to actual gifts."
+          {...trend(data.completion_rate, prevData?.completion_rate)}
         />
         <KPICard
           title="Extension Adoption"
           value={formatPercent(extensionAdoption)}
           icon={<Puzzle className="h-5 w-5 text-purple-500" />}
           tooltip="Percentage of users with items who added at least one item via the Chrome extension (vs manual entry)."
+          {...trend(extensionAdoption, prevData ? (prevData.total_users_with_items > 0 ? (prevData.extension_users / prevData.total_users_with_items) * 100 : 0) : undefined)}
         />
       </div>
 

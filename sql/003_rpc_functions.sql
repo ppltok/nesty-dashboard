@@ -50,7 +50,7 @@ BEGIN
 
     -- Economics
     'platform_gmv', (
-      SELECT COALESCE(SUM(i.price * i.quantity_received), 0)
+      SELECT COALESCE(SUM(i.price * i.quantity), 0)
       FROM items i
     ),
     'period_gmv', (
