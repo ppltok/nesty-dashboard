@@ -197,3 +197,23 @@ export interface PeopleData {
   summary: PeopleSummary
   users: PersonRow[]
 }
+
+// User Journey Timing
+export interface UserJourneyTiming {
+  timing: {
+    avg_days_signup_to_checklist: number | null
+    median_days_signup_to_checklist: number | null
+    users_with_checklist: number
+    avg_days_signup_to_first_item: number | null
+    median_days_signup_to_first_item: number | null
+    users_with_items: number
+    avg_days_checklist_to_first_item: number | null
+    median_days_checklist_to_first_item: number | null
+    users_checklist_then_item: number
+    total_users: number
+  }
+  signup_to_checklist_distribution: { bucket: string; users: number }[]
+  signup_to_item_distribution: { bucket: string; users: number }[]
+  share_by_pregnancy_week: { pregnancy_week: number; users: number }[]
+  gift_by_pregnancy_week: { pregnancy_week: number; users: number }[]
+}

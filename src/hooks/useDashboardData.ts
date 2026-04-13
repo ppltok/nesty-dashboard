@@ -13,6 +13,7 @@ import type {
   DailyItems,
   DailyGifts,
   DashboardUser,
+  UserJourneyTiming,
 } from '@/types/dashboard'
 
 export function useOverview(start: Date, end: Date) {
@@ -339,6 +340,18 @@ export function usePeopleList() {
         users: [],
       }
       return data as import('@/types/dashboard').PeopleData
+    },
+    staleTime: 300_000,
+  })
+}
+
+export function useUserJourneyTiming() {
+  return useQuery<UserJourneyTiming>({
+    queryKey: ['user-journey-timing'],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('get_user_journey_timing')
+      if (error) throw error
+      return data as UserJourneyTiming
     },
     staleTime: 300_000,
   })
