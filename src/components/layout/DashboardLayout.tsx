@@ -14,6 +14,7 @@ const PAGE_TITLES: Record<string, string> = {
   '/growth': 'Growth & Acquisition',
   '/timeline': 'Pregnancy Timeline',
   '/email': 'Email Marketing',
+  '/people': 'People',
   '/settings': 'Settings',
 }
 

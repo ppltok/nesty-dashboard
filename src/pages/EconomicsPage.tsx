@@ -3,7 +3,14 @@ import { KPICard } from '@/components/shared/KPICard'
 import { PageSkeleton } from '@/components/shared/LoadingSkeleton'
 import { BarChartComponent } from '@/components/charts/BarChartComponent'
 import { formatNumber, formatCurrency, formatPercent } from '@/lib/formatters'
-import { DollarSign, BarChart3, TrendingUp, Gift, Heart, ShoppingBag } from 'lucide-react'
+import { DollarSign, BarChart3, TrendingUp, Gift, Heart, ShoppingBag, ShoppingCart } from 'lucide-react'
+
+const CATEGORY_LABELS: Record<string, string> = {
+  strollers: 'Strollers', car_safety: 'Car Safety', furniture: 'Furniture',
+  safety: 'Safety', feeding: 'Feeding', nursing: 'Nursing',
+  bath: 'Bath', clothing: 'Clothing', bedding: 'Bedding', toys: 'Toys',
+  diapering: 'Diapering', gear: 'Gear', health: 'Health', other: 'Other',
+}
 
 export default function EconomicsPage() {
   const economics = useEconomics()
@@ -34,25 +41,31 @@ export default function EconomicsPage() {
   }))
 
   const categoryPurchaseRate = (categories.data ?? []).map((c) => ({
-    name: c.category,
+    name: CATEGORY_LABELS[c.category] ?? c.category,
     value: Number((c.purchase_rate ?? 0).toFixed(1)),
   }))
 
   return (
     <div className="space-y-6">
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <KPICard
-          title="Total GMV"
-          value={formatCurrency(eco.total_gmv)}
+          title="Total Wishlist GMV"
+          value={formatCurrency(eco.avg_registry_value * eco.total_registries_with_items)}
           icon={<DollarSign className="h-5 w-5 text-green-500" />}
-          tooltip="Total Gross Merchandise Value — sum of all item prices across all registries on the platform."
+          tooltip="Total wishlist value (price × quantity) across all registries. Matches Platform GMV on the Overview page."
+        />
+        <KPICard
+          title="Gifted GMV"
+          value={formatCurrency(eco.total_gmv)}
+          icon={<ShoppingCart className="h-5 w-5 text-emerald-500" />}
+          tooltip="Total value of items actually purchased/gifted (price × quantity received). Represents real money spent."
         />
         <KPICard
           title="Avg Registry Value"
           value={formatCurrency(eco.avg_registry_value)}
           icon={<BarChart3 className="h-5 w-5 text-indigo-500" />}
-          tooltip="Average total value of items per registry. Only includes registries with at least one item."
+          tooltip="Average total wishlist value (price × quantity) per registry. Only includes registries with at least one item."
         />
         <KPICard
           title="Median Registry Value"
@@ -78,6 +91,12 @@ export default function EconomicsPage() {
           icon={<ShoppingBag className="h-5 w-5 text-teal-500" />}
           tooltip="Average number of gifts received per registry that has at least one gift."
         />
+        <KPICard
+          title="Completion Rate"
+          value={formatPercent(eco.completion_rate)}
+          icon={<BarChart3 className="h-5 w-5 text-amber-500" />}
+          tooltip="Percentage of wanted items that have been purchased (quantity_received / quantity)."
+        />
       </div>
 
       {/* Charts */}
@@ -86,7 +105,13 @@ export default function EconomicsPage() {
         <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
           <h2 className="text-lg font-medium text-gray-900 mb-4">Registry Value Distribution</h2>
           {valueDistribution.length > 0 ? (
-            <BarChartComponent data={valueDistribution} height={300} bars={[{ key: 'value', color: '#6366f1', label: 'Registries' }]} />
+            <BarChartComponent
+              data={valueDistribution}
+              height={320}
+              bars={[{ key: 'value', color: '#6366f1', label: 'Registries' }]}
+              xAxisLabel="Registry Value (₪)"
+              yAxisLabel="Registries"
+            />
           ) : (
             <div className="h-64 flex items-center justify-center text-gray-400">No data</div>
           )}
@@ -98,7 +123,14 @@ export default function EconomicsPage() {
           {categories.isLoading ? (
             <div className="h-64 flex items-center justify-center text-gray-400">Loading...</div>
           ) : categoryPurchaseRate.length > 0 ? (
-            <BarChartComponent data={categoryPurchaseRate} height={300} bars={[{ key: 'value', color: '#10b981', label: 'Purchase Rate %' }]} />
+            <BarChartComponent
+              data={categoryPurchaseRate}
+              height={320}
+              bars={[{ key: 'value', color: '#10b981', label: 'Purchase Rate %' }]}
+              xTickAngle={-35}
+              xAxisLabel="Category"
+              yAxisLabel="Purchase Rate %"
+            />
           ) : (
             <div className="h-64 flex items-center justify-center text-gray-400">No data</div>
           )}
@@ -110,8 +142,8 @@ export default function EconomicsPage() {
         <h2 className="text-lg font-medium text-gray-900 mb-3">Affiliate Pitch</h2>
         <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg p-5 text-gray-700 leading-relaxed">
           <p>
-            Nesty's platform processes a total GMV of{' '}
-            <strong>{formatCurrency(eco.total_gmv)}</strong> across{' '}
+            Nesty's platform has a total wishlist GMV of{' '}
+            <strong>{formatCurrency(eco.avg_registry_value * eco.total_registries_with_items)}</strong> across{' '}
             <strong>{formatNumber(eco.total_registries_with_items)}</strong> active registries. The
             average registry is valued at{' '}
             <strong>{formatCurrency(eco.avg_registry_value)}</strong>, with a median of{' '}

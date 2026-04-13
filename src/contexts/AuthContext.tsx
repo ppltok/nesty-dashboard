@@ -72,7 +72,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }, 5000)
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, s) => {
+      async (event, s) => {
+        // On token refresh, just update session without re-checking access
+        if (event === 'TOKEN_REFRESHED' && s?.user) {
+          setSession(s)
+          setUser(s.user)
+          setLoading(false)
+          return
+        }
+
         setSession(s)
         setUser(s?.user ?? null)
 
@@ -101,10 +109,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function signInWithGoogle() {
     setError(null)
-    const redirectTo = window.location.origin + '/'
     const { error: signInError } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo },
+      options: {
+        redirectTo: window.location.origin + '/',
+      },
     })
     if (signInError) {
       setError(signInError.message)

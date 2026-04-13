@@ -4,8 +4,8 @@ import { KPICard } from '@/components/shared/KPICard'
 import { PageSkeleton } from '@/components/shared/LoadingSkeleton'
 import { TrendChart } from '@/components/charts/TrendChart'
 import { DonutChart } from '@/components/charts/DonutChart'
-import { BarChartComponent } from '@/components/charts/BarChartComponent'
 import { formatNumber, formatCurrency, formatPercent } from '@/lib/formatters'
+// BarChartComponent removed — unused on this page
 import {
   Gift,
   Users,
@@ -16,6 +16,18 @@ import {
   CheckCircle,
   Puzzle,
 } from 'lucide-react'
+
+/** Compute % change and formatted label */
+function trend(current: number, previous: number): { change?: string; changePositive?: boolean } {
+  if (previous === 0 && current === 0) return {}
+  if (previous === 0) return { change: 'New', changePositive: true }
+  const pct = ((current - previous) / previous) * 100
+  if (Math.abs(pct) < 0.5) return {}
+  return {
+    change: `${Math.abs(Math.round(pct))}%`,
+    changePositive: pct > 0,
+  }
+}
 
 export default function OverviewPage() {
   const { dateRange } = useDateRange()
@@ -34,6 +46,11 @@ export default function OverviewPage() {
     data.total_users_with_items > 0
       ? (data.extension_users / data.total_users_with_items) * 100
       : 0
+
+  // Trend calculations
+  const usersTrend = trend(data.total_users, data.prev_total_users ?? data.total_users)
+  const registriesTrend = trend(data.active_registries, data.prev_active_registries ?? data.active_registries)
+  const gmvTrend = trend(data.platform_gmv, data.prev_platform_gmv ?? data.platform_gmv)
 
   const CATEGORY_LABELS: Record<string, string> = {
     strollers: 'Strollers', car_safety: 'Car Safety', furniture: 'Furniture',
@@ -63,18 +80,27 @@ export default function OverviewPage() {
           value={formatNumber(data.total_users)}
           icon={<Users className="h-5 w-5 text-blue-500" />}
           tooltip="Total number of signed-up users across all time, including those who haven't completed onboarding."
+          change={usersTrend.change}
+          changePositive={usersTrend.changePositive}
+          subtitle="vs prev period"
         />
         <KPICard
           title="Active Registries"
           value={formatNumber(data.active_registries)}
           icon={<ClipboardList className="h-5 w-5 text-green-500" />}
-          tooltip="Registries that have at least one item added. Indicates users who moved past onboarding."
+          tooltip="Registries that had at least one item added during the selected period."
+          change={registriesTrend.change}
+          changePositive={registriesTrend.changePositive}
+          subtitle="vs prev period"
         />
         <KPICard
           title="Platform GMV"
           value={formatCurrency(data.platform_gmv)}
           icon={<DollarSign className="h-5 w-5 text-yellow-500" />}
-          tooltip="Gross Merchandise Value — total price of all items across all registries. Represents the platform's total addressable gift value."
+          tooltip="Gross Merchandise Value — total wishlist value (price x quantity) across all registries."
+          change={gmvTrend.change}
+          changePositive={gmvTrend.changePositive}
+          subtitle="vs prev period"
         />
       </div>
 
@@ -84,7 +110,7 @@ export default function OverviewPage() {
           title="Avg Registry Value"
           value={formatCurrency(data.avg_registry_value)}
           icon={<BarChart3 className="h-5 w-5 text-indigo-500" />}
-          tooltip="Average total value (sum of item prices) per registry that has at least one item."
+          tooltip="Average total wishlist value (price x quantity) per registry. Should equal Platform GMV / number of registries with items."
         />
         <KPICard
           title="Avg Items/Registry"
@@ -119,6 +145,8 @@ export default function OverviewPage() {
             }).map((d) => ({ day: d.day, signups: d.signups }))}
             lines={[{ key: 'signups', color: '#6366f1', label: 'Signups' }]}
             height={280}
+            xAxisLabel="Date"
+            yAxisLabel="Count"
           />
         )}
       </div>

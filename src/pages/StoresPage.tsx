@@ -94,7 +94,14 @@ export default function StoresPage() {
         <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
           <h2 className="text-lg font-medium text-gray-900 mb-4">Top 10 Stores by Items</h2>
           {top10.length > 0 ? (
-            <BarChartComponent data={top10} height={300} bars={[{ key: 'value', color: '#6366f1', label: 'Items' }]} />
+            <BarChartComponent
+              data={top10}
+              height={340}
+              bars={[{ key: 'value', color: '#6366f1', label: 'Items' }]}
+              xTickAngle={-35}
+              xAxisLabel="Store"
+              yAxisLabel="Items"
+            />
           ) : (
             <div className="h-64 flex items-center justify-center text-gray-400">No data</div>
           )}

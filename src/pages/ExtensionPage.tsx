@@ -140,6 +140,8 @@ export default function ExtensionPage() {
               { key: 'extension', color: '#8b5cf6', label: 'Via Extension' },
               { key: 'manual', color: '#d1d5db', label: 'Manual' },
             ]}
+            xAxisLabel="Date"
+            yAxisLabel="Items"
           />
         ) : (
           <div className="h-64 flex items-center justify-center text-gray-400">No data</div>

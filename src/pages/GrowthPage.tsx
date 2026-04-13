@@ -96,6 +96,8 @@ export default function GrowthPage() {
               { key: 'signups', color: '#6366f1', label: 'Signups' },
               { key: 'onboarded', color: '#10b981', label: 'Onboarded' },
             ]}
+            xAxisLabel="Date"
+            yAxisLabel="Signups"
           />
         ) : (
           <div className="h-64 flex items-center justify-center text-gray-400">No data</div>

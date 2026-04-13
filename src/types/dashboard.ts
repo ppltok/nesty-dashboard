@@ -16,6 +16,13 @@ export interface DashboardOverview {
   north_star_30d: number
   extension_users: number
   total_users_with_items: number
+  // Previous period for trends
+  prev_total_users: number
+  prev_new_users: number
+  prev_active_registries: number
+  prev_new_items: number
+  prev_new_gifts: number
+  prev_platform_gmv: number
 }
 
 export interface FunnelStage {
@@ -89,9 +96,16 @@ export interface GiftGiverInsights {
 }
 
 export interface PregnancyTimeline {
-  items_by_week: { weeks_before_due: number; items_added: number }[] | null
-  gifts_by_week: { weeks_before_due: number; gifts_received: number }[] | null
-  avg_first_item_week: number | null
+  items_by_week: { pregnancy_week: number; items_added: number }[] | null
+  gifts_by_week: { pregnancy_week: number; gifts_received: number }[] | null
+  signups_by_week: { pregnancy_week: number; signups: number }[] | null
+  milestones: {
+    avg_signup_week: number | null
+    avg_first_item_week: number | null
+    avg_first_gift_week: number | null
+    recommended_share_week: number | null
+    users_with_due_date: number
+  }
   due_date_distribution: { month: string; user_count: number }[] | null
 }
 
@@ -127,4 +141,59 @@ export interface DateRange {
   start: Date
   end: Date
   label: string
+}
+
+// People page
+export interface PersonTopItem {
+  name: string
+  price: number
+  category: string
+  store_name: string | null
+  quantity: number
+  quantity_received: number
+  image_url: string | null
+  original_url: string | null
+}
+
+export interface PersonRow {
+  id: string
+  email: string
+  display_name: string
+  first_name: string | null
+  last_name: string | null
+  due_date: string | null
+  is_first_time_parent: boolean | null
+  feeling: string | null
+  onboarding_completed: boolean
+  email_notifications: boolean
+  marketing_emails: boolean
+  signed_up_at: string
+  registry_id: string | null
+  registry_slug: string | null
+  registry_title: string | null
+  item_count: number
+  registry_value: number
+  gifts_received: number
+  gift_value: number
+  total_wanted: number
+  total_received: number
+  unique_givers: number
+  pregnancy_week: number | null
+  completion_pct: number
+  top_items: PersonTopItem[] | null
+  last_item_at: string | null
+}
+
+export interface PeopleSummary {
+  total_users: number
+  users_with_items: number
+  users_with_gifts: number
+  avg_registry_value: number
+  avg_items: number
+  avg_completion: number
+}
+
+export interface PeopleData {
+  summary: PeopleSummary
+  users: PersonRow[]
 }

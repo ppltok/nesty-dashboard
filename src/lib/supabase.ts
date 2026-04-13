@@ -12,5 +12,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: true,
+    storageKey: 'nesty-dashboard-auth',
+    storage: window.localStorage,
   },
 })

@@ -14,7 +14,12 @@ import GiftsPage from '@/pages/GiftsPage'
 import GrowthPage from '@/pages/GrowthPage'
 import TimelinePage from '@/pages/TimelinePage'
 import EmailPage from '@/pages/EmailPage'
+import PeoplePage from '@/pages/PeoplePage'
 import SettingsPage from '@/pages/SettingsPage'
+import ExtractionReportsPage from '@/pages/ExtractionReportsPage'
+import AcquisitionPage from '@/pages/AcquisitionPage'
+import PriceAlertsPage from '@/pages/PriceAlertsPage'
+import ChecklistAnalyticsPage from '@/pages/ChecklistAnalyticsPage'
 import { Loader2 } from 'lucide-react'
 
 const queryClient = new QueryClient({
@@ -22,6 +27,8 @@ const queryClient = new QueryClient({
     queries: {
       retry: 1,
       refetchOnWindowFocus: false,
+      staleTime: 5 * 60 * 1000, // 5 minutes — prevents re-fetching on every page nav
+      gcTime: 10 * 60 * 1000, // 10 minutes — keep cache alive between pages
     },
   },
 })
@@ -57,6 +64,11 @@ function AuthGate() {
             <Route path="/growth" element={<GrowthPage />} />
             <Route path="/timeline" element={<TimelinePage />} />
             <Route path="/email" element={<EmailPage />} />
+            <Route path="/people" element={<PeoplePage />} />
+            <Route path="/extraction-reports" element={<ExtractionReportsPage />} />
+            <Route path="/acquisition" element={<AcquisitionPage />} />
+            <Route path="/price-alerts" element={<PriceAlertsPage />} />
+            <Route path="/checklist" element={<ChecklistAnalyticsPage />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>

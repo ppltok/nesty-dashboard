@@ -11,9 +11,14 @@ import {
   TrendingUp,
   Calendar,
   Mail,
+  Users,
   Settings,
   ChevronLeft,
   ChevronRight,
+  Bug,
+  Megaphone,
+  TrendingDown,
+  ClipboardList,
 } from 'lucide-react'
 import { cn } from '@/lib/cn'
 
@@ -28,6 +33,11 @@ const navItems = [
   { to: '/growth', icon: TrendingUp, label: 'Growth' },
   { to: '/timeline', icon: Calendar, label: 'Timeline' },
   { to: '/email', icon: Mail, label: 'Email' },
+  { to: '/people', icon: Users, label: 'People' },
+  { to: '/acquisition', icon: Megaphone, label: 'Acquisition' },
+  { to: '/checklist', icon: ClipboardList, label: 'Checklist' },
+  { to: '/price-alerts', icon: TrendingDown, label: 'Price Alerts' },
+  { to: '/extraction-reports', icon: Bug, label: 'Bug Reports' },
 ]
 
 const bottomItems = [

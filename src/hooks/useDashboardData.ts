@@ -130,8 +130,13 @@ export function usePregnancyTimeline() {
       const { data, error } = await supabase.rpc('get_pregnancy_timeline')
       if (error) throw error
       if (!data) return {
-        items_by_week: [], gifts_by_week: [],
-        avg_first_item_week: null, due_date_distribution: [],
+        items_by_week: [], gifts_by_week: [], signups_by_week: [],
+        milestones: {
+          avg_signup_week: null, avg_first_item_week: null,
+          avg_first_gift_week: null, recommended_share_week: null,
+          users_with_due_date: 0,
+        },
+        due_date_distribution: [],
       } satisfies PregnancyTimeline
       return data as PregnancyTimeline
     },
@@ -286,6 +291,56 @@ export function useEmailMetrics(start: Date, end: Date) {
       return data as EmailMetrics
     },
     staleTime: 60_000,
+  })
+}
+
+export interface EmailLogRow {
+  id: string
+  recipient_email: string
+  email_type: string
+  subject: string | null
+  status: string
+  sent_at: string
+  opened_at: string | null
+  clicked_at: string | null
+  click_url: string | null
+  provider: string | null
+}
+
+export function useEmailLogs(start: Date, end: Date) {
+  return useQuery<EmailLogRow[]>({
+    queryKey: ['email-logs', start.toISOString(), end.toISOString()],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('email_logs')
+        .select('id, recipient_email, email_type, subject, status, sent_at, opened_at, clicked_at, click_url, provider')
+        .gte('sent_at', start.toISOString())
+        .lte('sent_at', end.toISOString())
+        .order('sent_at', { ascending: false })
+        .limit(500)
+      if (error) throw error
+      return (data ?? []) as EmailLogRow[]
+    },
+    staleTime: 60_000,
+  })
+}
+
+export function usePeopleList() {
+  return useQuery<import('@/types/dashboard').PeopleData>({
+    queryKey: ['people-list'],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('get_people_list')
+      if (error) throw error
+      if (!data) return {
+        summary: {
+          total_users: 0, users_with_items: 0, users_with_gifts: 0,
+          avg_registry_value: 0, avg_items: 0, avg_completion: 0,
+        },
+        users: [],
+      }
+      return data as import('@/types/dashboard').PeopleData
+    },
+    staleTime: 300_000,
   })
 }
 
