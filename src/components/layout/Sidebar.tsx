@@ -19,6 +19,7 @@ import {
   Megaphone,
   TrendingDown,
   ClipboardList,
+  Table2,
 } from 'lucide-react'
 import { cn } from '@/lib/cn'
 
@@ -38,6 +39,7 @@ const navItems = [
   { to: '/checklist', icon: ClipboardList, label: 'Checklist' },
   { to: '/price-alerts', icon: TrendingDown, label: 'Price Alerts' },
   { to: '/extraction-reports', icon: Bug, label: 'Bug Reports' },
+  { to: '/pivot', icon: Table2, label: 'Pivot Tables' },
 ]
 
 const bottomItems = [

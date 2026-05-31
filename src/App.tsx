@@ -20,6 +20,7 @@ import ExtractionReportsPage from '@/pages/ExtractionReportsPage'
 import AcquisitionPage from '@/pages/AcquisitionPage'
 import PriceAlertsPage from '@/pages/PriceAlertsPage'
 import ChecklistAnalyticsPage from '@/pages/ChecklistAnalyticsPage'
+import PivotPage from '@/pages/PivotPage'
 import { Loader2 } from 'lucide-react'
 
 const queryClient = new QueryClient({
@@ -69,6 +70,7 @@ function AuthGate() {
             <Route path="/acquisition" element={<AcquisitionPage />} />
             <Route path="/price-alerts" element={<PriceAlertsPage />} />
             <Route path="/checklist" element={<ChecklistAnalyticsPage />} />
+            <Route path="/pivot" element={<PivotPage />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
