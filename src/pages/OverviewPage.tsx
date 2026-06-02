@@ -1,7 +1,7 @@
 import { useOverview, useFunnel, useStores, useCategories, useDailySignups, useDailyActiveRegistries, useTierFunnel } from '@/hooks/useDashboardData'
-import type { TierName } from '@/types/dashboard'
 import { Link } from 'react-router-dom'
 import { useDateRange } from '@/contexts/DateRangeContext'
+import { TIER_META } from '@/lib/tierMeta'
 import { KPICard } from '@/components/shared/KPICard'
 import { PageSkeleton } from '@/components/shared/LoadingSkeleton'
 import { TrendChart } from '@/components/charts/TrendChart'
@@ -207,20 +207,14 @@ export default function OverviewPage() {
         />
       </div>
 
-      {/* User Tier Funnel — compact view, filtered by signup cohort */}
+      {/* User Tier Funnel — compact view, filtered by signup cohort.
+       *  Tier definitions imported from @/lib/tierMeta (shared with Funnel page). */}
       {(() => {
-        const TIER_META_OV: Record<TierName, { label: string; color: string }> = {
-          user:     { label: 'User',       color: '#94a3b8' },
-          started:  { label: 'Started',    color: '#60a5fa' },
-          active:   { label: 'Active',     color: '#34d399' },
-          super:    { label: 'Super',      color: '#fbbf24' },
-          champion: { label: 'Champion',   color: '#f472b6' },
-        }
         const tf = tierFunnel.data
         const totalTier = tf?.total_users ?? 0
         const rows = (tf?.tiers ?? []).map((row) => ({
           ...row,
-          meta: TIER_META_OV[row.tier],
+          meta: TIER_META[row.tier],
           pct: totalTier > 0 ? (row.users / totalTier) * 100 : 0,
         }))
         const maxUsers = Math.max(1, ...rows.map((r) => r.users))
@@ -240,9 +234,19 @@ export default function OverviewPage() {
             ) : (
               <div className="grid grid-cols-5 gap-3">
                 {rows.map((row) => (
-                  <div key={row.tier} className="flex flex-col items-center">
-                    <div className="text-xs text-gray-500 mb-1.5">{row.meta.label}</div>
-                    <div className="w-full h-28 bg-gray-50 rounded-lg overflow-hidden flex items-end">
+                  <div
+                    key={row.tier}
+                    className="flex flex-col items-center"
+                    title={row.meta.description}
+                  >
+                    <div className="text-sm font-medium text-gray-900 mb-0.5">{row.meta.label}</div>
+                    <div
+                      className="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded text-white mb-1.5"
+                      style={{ backgroundColor: row.meta.color }}
+                    >
+                      {row.meta.criteria}
+                    </div>
+                    <div className="w-full h-24 bg-gray-50 rounded-lg overflow-hidden flex items-end">
                       <div
                         className="w-full transition-all duration-500"
                         style={{
