@@ -9,15 +9,7 @@ import { Download, Clock, CalendarCheck, Baby, Gift, ClipboardList, ArrowRight, 
 import { downloadCSV } from '@/lib/csv'
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip as ReTooltip, CartesianGrid, Legend } from 'recharts'
 import type { TierName } from '@/types/dashboard'
-
-// Tier display config. Mirrors Nesty-Obsidian/Product/User-Tiers.md.
-const TIER_META: Record<TierName, { label: string; description: string; color: string }> = {
-  user:     { label: 'User',       description: 'Signed up, no items',                  color: '#94a3b8' },
-  started:  { label: 'Started',    description: '≥1 item',                              color: '#60a5fa' },
-  active:   { label: 'Active',     description: '≥2 items (real return signal)',        color: '#34d399' },
-  super:    { label: 'Super user', description: '≥5 items (power user)',                color: '#fbbf24' },
-  champion: { label: 'Champion',   description: '≥1 received from anyone (outcome)',    color: '#f472b6' },
-}
+import { TIER_META } from '@/lib/tierMeta'
 
 const FLAG_META = {
   has_coparent:    { label: 'Co-parent',       icon: Handshake,    color: 'text-rose-500' },
@@ -104,11 +96,11 @@ export default function FunnelPage() {
                 labelStyle={{ color: '#1f2937', fontWeight: 500 }}
               />
               <Legend wrapperStyle={{ fontSize: 12 }} />
-              <Area type="monotone" dataKey="user"     name="User"     stackId="1" stroke={TIER_META.user.color}     fill={TIER_META.user.color}     fillOpacity={0.85} />
-              <Area type="monotone" dataKey="started"  name="Started"  stackId="1" stroke={TIER_META.started.color}  fill={TIER_META.started.color}  fillOpacity={0.85} />
-              <Area type="monotone" dataKey="active"   name="Active"   stackId="1" stroke={TIER_META.active.color}   fill={TIER_META.active.color}   fillOpacity={0.85} />
-              <Area type="monotone" dataKey="super"    name="Super"    stackId="1" stroke={TIER_META.super.color}    fill={TIER_META.super.color}    fillOpacity={0.85} />
-              <Area type="monotone" dataKey="champion" name="Champion" stackId="1" stroke={TIER_META.champion.color} fill={TIER_META.champion.color} fillOpacity={0.85} />
+              <Area type="monotone" dataKey="user"     name={`User (${TIER_META.user.criteria})`}         stackId="1" stroke={TIER_META.user.color}     fill={TIER_META.user.color}     fillOpacity={0.85} />
+              <Area type="monotone" dataKey="started"  name={`Started (${TIER_META.started.criteria})`}   stackId="1" stroke={TIER_META.started.color}  fill={TIER_META.started.color}  fillOpacity={0.85} />
+              <Area type="monotone" dataKey="active"   name={`Active (${TIER_META.active.criteria})`}     stackId="1" stroke={TIER_META.active.color}   fill={TIER_META.active.color}   fillOpacity={0.85} />
+              <Area type="monotone" dataKey="super"    name={`Super (${TIER_META.super.criteria})`}       stackId="1" stroke={TIER_META.super.color}    fill={TIER_META.super.color}    fillOpacity={0.85} />
+              <Area type="monotone" dataKey="champion" name={`Champion (${TIER_META.champion.criteria})`} stackId="1" stroke={TIER_META.champion.color} fill={TIER_META.champion.color} fillOpacity={0.85} />
             </AreaChart>
           </ResponsiveContainer>
         )}
@@ -135,8 +127,17 @@ export default function FunnelPage() {
           <div className="space-y-2.5">
             {tierRows.map((row) => (
               <div key={row.tier} className="flex items-center gap-3">
-                <div className="w-32 shrink-0">
-                  <div className="text-sm font-medium text-gray-900">{row.meta.label}</div>
+                <div className="w-40 shrink-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-gray-900">{row.meta.label}</span>
+                    <span
+                      className="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded text-white"
+                      style={{ backgroundColor: row.meta.color }}
+                      title={row.meta.description}
+                    >
+                      {row.meta.criteria}
+                    </span>
+                  </div>
                   <div className="text-xs text-gray-400">{row.meta.description}</div>
                 </div>
                 <div className="flex-1">
@@ -200,6 +201,7 @@ export default function FunnelPage() {
                         <div className="flex items-center gap-2">
                           <span className="w-2 h-2 rounded-full" style={{ backgroundColor: meta.color }} />
                           <span className="font-medium text-gray-900">{meta.label}</span>
+                          <span className="text-xs text-gray-400">({meta.criteria})</span>
                         </div>
                       </td>
                       <td className="px-3 py-2.5 text-right font-medium text-gray-700">{formatNumber(row.users)}</td>
