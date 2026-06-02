@@ -1,11 +1,30 @@
-import { useFunnel, useUserJourneyTiming } from '@/hooks/useDashboardData'
+import { useFunnel, useUserJourneyTiming, useTierFunnel } from '@/hooks/useDashboardData'
 import { PageSkeleton } from '@/components/shared/LoadingSkeleton'
 import { FunnelChart } from '@/components/charts/FunnelChart'
 import { BarChartComponent } from '@/components/charts/BarChartComponent'
 import { KPICard } from '@/components/shared/KPICard'
 import { formatNumber, formatPercent } from '@/lib/formatters'
-import { Download, Clock, CalendarCheck, Baby, Gift, ClipboardList, ArrowRight } from 'lucide-react'
+import { Download, Clock, CalendarCheck, Baby, Gift, ClipboardList, ArrowRight, Users, Handshake, Share2, Heart, ShoppingBag, PackageCheck } from 'lucide-react'
 import { downloadCSV } from '@/lib/csv'
+import type { TierName } from '@/types/dashboard'
+
+// Tier display config. Mirrors Nesty-Obsidian/Product/User-Tiers.md.
+const TIER_META: Record<TierName, { label: string; description: string; color: string }> = {
+  user:     { label: 'User',       description: 'Signed up, no items',                  color: '#94a3b8' },
+  started:  { label: 'Started',    description: '≥1 item',                              color: '#60a5fa' },
+  active:   { label: 'Active',     description: '≥2 items (real return signal)',        color: '#34d399' },
+  super:    { label: 'Super user', description: '≥5 items (power user)',                color: '#fbbf24' },
+  champion: { label: 'Champion',   description: '≥1 received from anyone (outcome)',    color: '#f472b6' },
+}
+
+const FLAG_META = {
+  has_coparent:    { label: 'Co-parent',       icon: Handshake,    color: 'text-rose-500' },
+  sharer:          { label: 'Sharer',          icon: Share2,       color: 'text-blue-500' },
+  network_reached: { label: 'Network-reached', icon: Heart,        color: 'text-pink-500' },
+  self_fulfiller:  { label: 'Self-fulfiller',  icon: ShoppingBag,  color: 'text-amber-500' },
+  gift_received:   { label: 'Gift-received',   icon: PackageCheck, color: 'text-emerald-500' },
+} as const
+type FlagKey = keyof typeof FLAG_META
 
 const STAGE_LABELS: Record<string, string> = {
   signups: 'Signed Up',
@@ -20,6 +39,7 @@ const STAGE_LABELS: Record<string, string> = {
 export default function FunnelPage() {
   const { data, isLoading, error } = useFunnel()
   const journey = useUserJourneyTiming()
+  const tierFunnel = useTierFunnel()
 
   if (isLoading) return <PageSkeleton />
   if (error) return <div className="p-6 text-red-600">Failed to load funnel: {error.message}</div>
@@ -30,10 +50,153 @@ export default function FunnelPage() {
   const j = journey.data
   const t = j?.timing
 
+  // Tier funnel + flag matrix data
+  const tf = tierFunnel.data
+  const totalTierUsers = tf?.total_users ?? 0
+  const tierRows = (tf?.tiers ?? []).map((row) => ({
+    ...row,
+    meta: TIER_META[row.tier],
+    pct: totalTierUsers > 0 ? (row.users / totalTierUsers) * 100 : 0,
+  }))
+  const maxTierUsers = Math.max(1, ...tierRows.map((r) => r.users))
+
   return (
     <div className="space-y-6">
-      {/* Funnel Visualization */}
+      {/* === User Tier Funnel (User-Tiers.md) ============================= */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
+        <div className="flex items-center justify-between mb-1">
+          <h2 className="text-lg font-medium text-gray-900 flex items-center gap-2">
+            <Users size={18} className="text-indigo-500" />
+            User Tier Funnel
+          </h2>
+          <span className="text-xs text-gray-400">{formatNumber(totalTierUsers)} users · tests excluded</span>
+        </div>
+        <p className="text-xs text-gray-500 mb-5">
+          Engagement depth, strictly nested. Each user sits in exactly one tier. See <code className="px-1 bg-gray-100 rounded">User-Tiers.md</code> for definitions.
+        </p>
+
+        {tierFunnel.isLoading ? (
+          <div className="text-gray-400 py-12 text-center">Loading tiers...</div>
+        ) : tierFunnel.error ? (
+          <div className="text-red-600 py-4 text-sm">Failed to load tier funnel: {tierFunnel.error.message}</div>
+        ) : (
+          <div className="space-y-2.5">
+            {tierRows.map((row) => (
+              <div key={row.tier} className="flex items-center gap-3">
+                <div className="w-32 shrink-0">
+                  <div className="text-sm font-medium text-gray-900">{row.meta.label}</div>
+                  <div className="text-xs text-gray-400">{row.meta.description}</div>
+                </div>
+                <div className="flex-1">
+                  <div className="h-9 bg-gray-50 rounded-lg overflow-hidden relative">
+                    <div
+                      className="h-full rounded-lg transition-all duration-500 flex items-center justify-end pe-3"
+                      style={{
+                        width: `${(row.users / maxTierUsers) * 100}%`,
+                        backgroundColor: row.meta.color,
+                        minWidth: row.users > 0 ? '36px' : '0',
+                      }}
+                    >
+                      <span className="text-xs font-semibold text-white drop-shadow">
+                        {formatNumber(row.users)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <div className="w-14 text-right text-xs font-medium text-gray-500">
+                  {row.pct.toFixed(1)}%
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* === Behavioral Flag Matrix (orthogonal to tier) ================== */}
+      {tf && (
+        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
+          <h2 className="text-lg font-medium text-gray-900 mb-1">Flag × Tier Matrix</h2>
+          <p className="text-xs text-gray-500 mb-5">
+            Five orthogonal behavioral flags. A user can carry any combination — these don't replace the funnel, they cross with it. Cell shows users with that flag in that tier (and % of the tier).
+          </p>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-gray-50 text-left text-xs">
+                  <th className="px-3 py-2 font-medium text-gray-500">Tier</th>
+                  <th className="px-3 py-2 font-medium text-gray-500 text-right">Users</th>
+                  {(Object.keys(FLAG_META) as FlagKey[]).map((key) => {
+                    const F = FLAG_META[key]
+                    const Icon = F.icon
+                    return (
+                      <th key={key} className="px-3 py-2 font-medium text-gray-500 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <Icon size={12} className={F.color} />
+                          {F.label}
+                        </div>
+                      </th>
+                    )
+                  })}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {tf.flag_by_tier.map((row) => {
+                  const meta = TIER_META[row.tier as TierName]
+                  return (
+                    <tr key={row.tier}>
+                      <td className="px-3 py-2.5">
+                        <div className="flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full" style={{ backgroundColor: meta.color }} />
+                          <span className="font-medium text-gray-900">{meta.label}</span>
+                        </div>
+                      </td>
+                      <td className="px-3 py-2.5 text-right font-medium text-gray-700">{formatNumber(row.users)}</td>
+                      {(Object.keys(FLAG_META) as FlagKey[]).map((key) => {
+                        const count = row[key]
+                        const pct = row.users > 0 ? (count / row.users) * 100 : 0
+                        return (
+                          <td key={key} className="px-3 py-2.5 text-right">
+                            <span className={count > 0 ? 'text-gray-900 font-medium' : 'text-gray-300'}>
+                              {formatNumber(count)}
+                            </span>
+                            {count > 0 && (
+                              <span className="text-gray-400 text-xs ms-1">({pct.toFixed(0)}%)</span>
+                            )}
+                          </td>
+                        )
+                      })}
+                    </tr>
+                  )
+                })}
+                <tr className="bg-gray-50 font-medium">
+                  <td className="px-3 py-2.5 text-gray-700">Total</td>
+                  <td className="px-3 py-2.5 text-right text-gray-700">{formatNumber(tf.total_users)}</td>
+                  {(Object.keys(FLAG_META) as FlagKey[]).map((key) => {
+                    const total = tf.flags_overall[key]
+                    const pct = tf.total_users > 0 ? (total / tf.total_users) * 100 : 0
+                    return (
+                      <td key={key} className="px-3 py-2.5 text-right text-gray-700">
+                        {formatNumber(total)}
+                        {total > 0 && <span className="text-gray-400 text-xs ms-1">({pct.toFixed(1)}%)</span>}
+                      </td>
+                    )
+                  })}
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p className="text-xs text-gray-400 mt-3">
+            Note: <code className="px-1 bg-gray-50 rounded">sharer</code> is UTM-inferred only until <code className="px-1 bg-gray-50 rounded">share_events</code> table is wired. <code className="px-1 bg-gray-50 rounded">network_reached</code> / <code className="px-1 bg-gray-50 rounded">self_fulfiller</code> / <code className="px-1 bg-gray-50 rounded">gift_received</code> depend on the <code className="px-1 bg-gray-50 rounded">purchases</code> table being populated; expect low numbers today.
+          </p>
+        </div>
+      )}
+
+      {/* === Legacy 7-stage funnel (kept until tier funnel proves out) ==== */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
+        <h2 className="text-lg font-medium text-gray-900 mb-1">Legacy Funnel (7-stage)</h2>
+        <p className="text-xs text-gray-500 mb-4">
+          Original event-based funnel from <code className="px-1 bg-gray-100 rounded">mv_funnel_snapshot</code>. Kept for continuity while the tier funnel above proves out.
+        </p>
         <FunnelChart
           data={stages.map((s) => ({
             stage: STAGE_LABELS[s.stage] ?? s.stage,

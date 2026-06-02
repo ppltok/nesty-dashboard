@@ -15,6 +15,7 @@ import type {
   DailyGifts,
   DashboardUser,
   UserJourneyTiming,
+  TierFunnel,
 } from '@/types/dashboard'
 
 export function useOverview(start: Date, end: Date) {
@@ -29,6 +30,24 @@ export function useOverview(start: Date, end: Date) {
       return data as DashboardOverview
     },
     staleTime: 60_000,
+  })
+}
+
+/** 5-tier user funnel + flag matrix (User-Tiers.md). Returns the full
+ *  segmentation breakdown for the FunnelPage in a single round-trip. */
+export function useTierFunnel() {
+  return useQuery<TierFunnel>({
+    queryKey: ['tier-funnel'],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('get_tier_funnel')
+      if (error) throw error
+      if (!data) return {
+        total_users: 0, tiers: [], flag_by_tier: [],
+        flags_overall: { has_coparent: 0, sharer: 0, network_reached: 0, self_fulfiller: 0, gift_received: 0 },
+      } satisfies TierFunnel
+      return data as TierFunnel
+    },
+    staleTime: 300_000,
   })
 }
 
