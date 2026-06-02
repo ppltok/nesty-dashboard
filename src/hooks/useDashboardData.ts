@@ -16,6 +16,7 @@ import type {
   DashboardUser,
   UserJourneyTiming,
   TierFunnel,
+  TierTrendRow,
 } from '@/types/dashboard'
 
 export function useOverview(start: Date, end: Date) {
@@ -33,13 +34,18 @@ export function useOverview(start: Date, end: Date) {
   })
 }
 
-/** 5-tier user funnel + flag matrix (User-Tiers.md). Returns the full
- *  segmentation breakdown for the FunnelPage in a single round-trip. */
-export function useTierFunnel() {
+/** 5-tier user funnel + flag matrix (User-Tiers.md), filtered by signup-cohort
+ *  date range. Pass `null` for all-time. */
+export function useTierFunnel(start?: Date | null, end?: Date | null) {
+  const startISO = start?.toISOString() ?? null
+  const endISO = end?.toISOString() ?? null
   return useQuery<TierFunnel>({
-    queryKey: ['tier-funnel'],
+    queryKey: ['tier-funnel', startISO, endISO],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc('get_tier_funnel')
+      const { data, error } = await supabase.rpc('get_tier_funnel', {
+        period_start: startISO,
+        period_end: endISO,
+      })
       if (error) throw error
       if (!data) return {
         total_users: 0, tiers: [], flag_by_tier: [],
@@ -47,7 +53,25 @@ export function useTierFunnel() {
       } satisfies TierFunnel
       return data as TierFunnel
     },
-    staleTime: 300_000,
+    staleTime: 60_000,
+  })
+}
+
+/** Per-signup-week tier composition trend (stacked area chart on Funnel page). */
+export function useTierTrend(start?: Date | null, end?: Date | null) {
+  const startISO = start?.toISOString() ?? null
+  const endISO = end?.toISOString() ?? null
+  return useQuery<TierTrendRow[]>({
+    queryKey: ['tier-trend', startISO, endISO],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('get_tier_trend', {
+        period_start: startISO,
+        period_end: endISO,
+      })
+      if (error) throw error
+      return (data as TierTrendRow[]) ?? []
+    },
+    staleTime: 60_000,
   })
 }
 

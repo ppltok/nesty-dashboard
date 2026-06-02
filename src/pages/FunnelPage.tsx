@@ -1,11 +1,13 @@
-import { useFunnel, useUserJourneyTiming, useTierFunnel } from '@/hooks/useDashboardData'
+import { useFunnel, useUserJourneyTiming, useTierFunnel, useTierTrend } from '@/hooks/useDashboardData'
+import { useDateRange } from '@/contexts/DateRangeContext'
 import { PageSkeleton } from '@/components/shared/LoadingSkeleton'
 import { FunnelChart } from '@/components/charts/FunnelChart'
 import { BarChartComponent } from '@/components/charts/BarChartComponent'
 import { KPICard } from '@/components/shared/KPICard'
 import { formatNumber, formatPercent } from '@/lib/formatters'
-import { Download, Clock, CalendarCheck, Baby, Gift, ClipboardList, ArrowRight, Users, Handshake, Share2, Heart, ShoppingBag, PackageCheck } from 'lucide-react'
+import { Download, Clock, CalendarCheck, Baby, Gift, ClipboardList, ArrowRight, Users, Handshake, Share2, Heart, ShoppingBag, PackageCheck, TrendingUp } from 'lucide-react'
 import { downloadCSV } from '@/lib/csv'
+import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip as ReTooltip, CartesianGrid, Legend } from 'recharts'
 import type { TierName } from '@/types/dashboard'
 
 // Tier display config. Mirrors Nesty-Obsidian/Product/User-Tiers.md.
@@ -37,9 +39,11 @@ const STAGE_LABELS: Record<string, string> = {
 }
 
 export default function FunnelPage() {
+  const { dateRange } = useDateRange()
   const { data, isLoading, error } = useFunnel()
   const journey = useUserJourneyTiming()
-  const tierFunnel = useTierFunnel()
+  const tierFunnel = useTierFunnel(dateRange.start, dateRange.end)
+  const tierTrend = useTierTrend(dateRange.start, dateRange.end)
 
   if (isLoading) return <PageSkeleton />
   if (error) return <div className="p-6 text-red-600">Failed to load funnel: {error.message}</div>
@@ -58,10 +62,58 @@ export default function FunnelPage() {
     meta: TIER_META[row.tier],
     pct: totalTierUsers > 0 ? (row.users / totalTierUsers) * 100 : 0,
   }))
+
+  // Tier trend — stacked area chart data
+  const trendData = (tierTrend.data ?? []).map((r) => ({
+    week: r.week,
+    weekLabel: new Date(r.week).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+    user: r.user,
+    started: r.started,
+    active: r.active,
+    super: r.super,
+    champion: r.champion,
+  }))
   const maxTierUsers = Math.max(1, ...tierRows.map((r) => r.users))
 
   return (
     <div className="space-y-6">
+      {/* === Tier Composition Trend (signup-cohort) ======================= */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
+        <div className="flex items-center justify-between mb-1">
+          <h2 className="text-lg font-medium text-gray-900 flex items-center gap-2">
+            <TrendingUp size={18} className="text-indigo-500" />
+            Tier Composition Trend
+          </h2>
+          <span className="text-xs text-gray-400">{dateRange.label} · signup cohort</span>
+        </div>
+        <p className="text-xs text-gray-500 mb-5">
+          Stacked weekly cohorts. Each bar shows the users who signed up that week and their <strong>current</strong> tier. Use the date filter above to compare cohorts before / after onboarding changes.
+        </p>
+        {tierTrend.isLoading ? (
+          <div className="h-64 flex items-center justify-center text-gray-400">Loading trend...</div>
+        ) : trendData.length === 0 ? (
+          <div className="h-64 flex items-center justify-center text-gray-400">No signups in this range</div>
+        ) : (
+          <ResponsiveContainer width="100%" height={280}>
+            <AreaChart data={trendData} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+              <XAxis dataKey="weekLabel" tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={{ stroke: '#e5e7eb' }} tickLine={false} />
+              <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+              <ReTooltip
+                contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #e5e7eb' }}
+                labelStyle={{ color: '#1f2937', fontWeight: 500 }}
+              />
+              <Legend wrapperStyle={{ fontSize: 12 }} />
+              <Area type="monotone" dataKey="user"     name="User"     stackId="1" stroke={TIER_META.user.color}     fill={TIER_META.user.color}     fillOpacity={0.85} />
+              <Area type="monotone" dataKey="started"  name="Started"  stackId="1" stroke={TIER_META.started.color}  fill={TIER_META.started.color}  fillOpacity={0.85} />
+              <Area type="monotone" dataKey="active"   name="Active"   stackId="1" stroke={TIER_META.active.color}   fill={TIER_META.active.color}   fillOpacity={0.85} />
+              <Area type="monotone" dataKey="super"    name="Super"    stackId="1" stroke={TIER_META.super.color}    fill={TIER_META.super.color}    fillOpacity={0.85} />
+              <Area type="monotone" dataKey="champion" name="Champion" stackId="1" stroke={TIER_META.champion.color} fill={TIER_META.champion.color} fillOpacity={0.85} />
+            </AreaChart>
+          </ResponsiveContainer>
+        )}
+      </div>
+
       {/* === User Tier Funnel (User-Tiers.md) ============================= */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
         <div className="flex items-center justify-between mb-1">
@@ -69,10 +121,10 @@ export default function FunnelPage() {
             <Users size={18} className="text-indigo-500" />
             User Tier Funnel
           </h2>
-          <span className="text-xs text-gray-400">{formatNumber(totalTierUsers)} users · tests excluded</span>
+          <span className="text-xs text-gray-400">{formatNumber(totalTierUsers)} users · {dateRange.label} · tests excluded</span>
         </div>
         <p className="text-xs text-gray-500 mb-5">
-          Engagement depth, strictly nested. Each user sits in exactly one tier. See <code className="px-1 bg-gray-100 rounded">User-Tiers.md</code> for definitions.
+          Engagement depth, strictly nested. Each user sits in exactly one tier. Filtered by signup-cohort within selected date range. See <code className="px-1 bg-gray-100 rounded">User-Tiers.md</code> for definitions.
         </p>
 
         {tierFunnel.isLoading ? (

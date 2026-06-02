@@ -8,6 +8,10 @@ export interface DashboardOverview {
   new_items: number
   total_gifts: number
   new_gifts: number
+  /** Confirmed gifts (period) where buyer email matches the registry owner or co-parent profile. */
+  gifts_by_owner: number
+  /** Confirmed gifts (period) where buyer email does NOT match the owner or co-parent — i.e. friends & family. */
+  gifts_by_external: number
   platform_gmv: number
   period_gmv: number
   avg_registry_value: number
@@ -24,6 +28,8 @@ export interface DashboardOverview {
   prev_active_registries: number
   prev_new_items: number
   prev_new_gifts: number
+  prev_gifts_by_owner: number
+  prev_gifts_by_external: number
   prev_platform_gmv: number
 }
 
@@ -50,6 +56,18 @@ export interface TierFlagCounts {
   network_reached: number
   self_fulfiller: number
   gift_received: number
+}
+
+/** Per-signup-week cohort tier composition. For each week of signups,
+ *  how many users currently sit in each tier. */
+export interface TierTrendRow {
+  week: string           // ISO date for the week-start (Monday)
+  signups: number
+  user: number
+  started: number
+  active: number
+  super: number
+  champion: number
 }
 
 export interface StoreBreakdown {

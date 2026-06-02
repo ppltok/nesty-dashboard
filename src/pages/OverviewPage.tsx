@@ -1,4 +1,6 @@
-import { useOverview, useFunnel, useStores, useCategories, useDailySignups, useDailyActiveRegistries } from '@/hooks/useDashboardData'
+import { useOverview, useFunnel, useStores, useCategories, useDailySignups, useDailyActiveRegistries, useTierFunnel } from '@/hooks/useDashboardData'
+import type { TierName } from '@/types/dashboard'
+import { Link } from 'react-router-dom'
 import { useDateRange } from '@/contexts/DateRangeContext'
 import { KPICard } from '@/components/shared/KPICard'
 import { PageSkeleton } from '@/components/shared/LoadingSkeleton'
@@ -17,6 +19,8 @@ import {
   CheckCircle,
   Puzzle,
   Handshake,
+  Heart,
+  UserCircle,
 } from 'lucide-react'
 
 /** Compute % change and formatted label */
@@ -39,6 +43,7 @@ export default function OverviewPage() {
   const categories = useCategories()
   const signups = useDailySignups()
   const dailyActive = useDailyActiveRegistries()
+  const tierFunnel = useTierFunnel(dateRange.start, dateRange.end)
 
   if (overview.isLoading) return <PageSkeleton />
   if (overview.error) return <div className="p-6 text-red-600">Failed to load overview: {overview.error.message}</div>
@@ -65,6 +70,16 @@ export default function OverviewPage() {
       ? ((data.prev_active_registries ?? 0) / (data.prev_new_users ?? 1)) * 100
       : 0
   const activeRateTrend = trend(activeRate, prevActiveRate)
+
+  // Owner-side vs external gifts (period). Friends & family share = external ÷ (owner + external).
+  const giftsByOwner = data.gifts_by_owner ?? 0
+  const giftsByExternal = data.gifts_by_external ?? 0
+  const giftsTotalSplit = giftsByOwner + giftsByExternal
+  const externalShare = giftsTotalSplit > 0 ? (giftsByExternal / giftsTotalSplit) * 100 : 0
+  const prevGiftsByOwner = data.prev_gifts_by_owner ?? 0
+  const prevGiftsByExternal = data.prev_gifts_by_external ?? 0
+  const ownerGiftsTrend = trend(giftsByOwner, prevGiftsByOwner)
+  const externalGiftsTrend = trend(giftsByExternal, prevGiftsByExternal)
 
   const CATEGORY_LABELS: Record<string, string> = {
     strollers: 'Strollers', car_safety: 'Car Safety', furniture: 'Furniture',
@@ -118,6 +133,35 @@ export default function OverviewPage() {
         />
       </div>
 
+      {/* KPI Row 1b — gift attribution (who actually bought) */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <KPICard
+          title="Gifts by Friends & Family"
+          value={formatNumber(giftsByExternal)}
+          icon={<Heart className="h-5 w-5 text-pink-500" />}
+          tooltip="Confirmed gift purchases (this period) where the buyer email does NOT match the registry owner or co-parent — i.e. real external gift-givers."
+          change={externalGiftsTrend.change}
+          changePositive={externalGiftsTrend.changePositive}
+          subtitle="vs prev period"
+        />
+        <KPICard
+          title="Gifts by Owner / Co-parent"
+          value={formatNumber(giftsByOwner)}
+          icon={<UserCircle className="h-5 w-5 text-gray-500" />}
+          tooltip="Confirmed gift purchases (this period) where the buyer email matches the registry owner or their co-parent. Usually self-bought items the owner ran through the gift flow."
+          change={ownerGiftsTrend.change}
+          changePositive={ownerGiftsTrend.changePositive}
+          subtitle="vs prev period"
+        />
+        <KPICard
+          title="Friends & Family Share"
+          value={formatPercent(externalShare)}
+          icon={<Gift className="h-5 w-5 text-rose-500" />}
+          tooltip="Share of confirmed gifts (this period) bought by friends & family rather than the owner/co-parent. Higher = registries are reaching their network, not just being self-fulfilled."
+          subtitle={`${formatNumber(giftsByExternal)} of ${formatNumber(giftsTotalSplit)}`}
+        />
+      </div>
+
       {/* KPI Row 2 — all-time / structural metrics */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
         <KPICard
@@ -162,6 +206,61 @@ export default function OverviewPage() {
           tooltip="Percentage of users with items who added at least one item via the Chrome extension (vs manual entry)."
         />
       </div>
+
+      {/* User Tier Funnel — compact view, filtered by signup cohort */}
+      {(() => {
+        const TIER_META_OV: Record<TierName, { label: string; color: string }> = {
+          user:     { label: 'User',       color: '#94a3b8' },
+          started:  { label: 'Started',    color: '#60a5fa' },
+          active:   { label: 'Active',     color: '#34d399' },
+          super:    { label: 'Super',      color: '#fbbf24' },
+          champion: { label: 'Champion',   color: '#f472b6' },
+        }
+        const tf = tierFunnel.data
+        const totalTier = tf?.total_users ?? 0
+        const rows = (tf?.tiers ?? []).map((row) => ({
+          ...row,
+          meta: TIER_META_OV[row.tier],
+          pct: totalTier > 0 ? (row.users / totalTier) * 100 : 0,
+        }))
+        const maxUsers = Math.max(1, ...rows.map((r) => r.users))
+        return (
+          <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
+            <div className="flex items-center justify-between mb-1">
+              <h2 className="text-lg font-medium text-gray-900">User Tier Funnel</h2>
+              <Link to="/funnel" className="text-xs text-indigo-600 hover:text-indigo-700">Details →</Link>
+            </div>
+            <p className="text-xs text-gray-500 mb-4">
+              Signup cohort: {dateRange.label} · {formatNumber(totalTier)} users · tests excluded
+            </p>
+            {tierFunnel.isLoading ? (
+              <div className="h-32 flex items-center justify-center text-gray-400">Loading tiers...</div>
+            ) : rows.length === 0 ? (
+              <div className="h-32 flex items-center justify-center text-gray-400">No signups in this range</div>
+            ) : (
+              <div className="grid grid-cols-5 gap-3">
+                {rows.map((row) => (
+                  <div key={row.tier} className="flex flex-col items-center">
+                    <div className="text-xs text-gray-500 mb-1.5">{row.meta.label}</div>
+                    <div className="w-full h-28 bg-gray-50 rounded-lg overflow-hidden flex items-end">
+                      <div
+                        className="w-full transition-all duration-500"
+                        style={{
+                          height: `${(row.users / maxUsers) * 100}%`,
+                          backgroundColor: row.meta.color,
+                          minHeight: row.users > 0 ? '4px' : '0',
+                        }}
+                      />
+                    </div>
+                    <div className="text-lg font-semibold text-gray-900 mt-2">{formatNumber(row.users)}</div>
+                    <div className="text-xs text-gray-400">{row.pct.toFixed(1)}%</div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )
+      })()}
 
       {/* Signups Trend + Active Registries overlay */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
