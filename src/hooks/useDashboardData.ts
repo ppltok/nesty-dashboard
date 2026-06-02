@@ -11,6 +11,7 @@ import type {
   PregnancyTimeline,
   DailySignups,
   DailyItems,
+  DailyActiveRegistries,
   DailyGifts,
   DashboardUser,
   UserJourneyTiming,
@@ -193,6 +194,21 @@ export function useDailySignups() {
   })
 }
 
+export function useDailyActiveRegistries() {
+  return useQuery<DailyActiveRegistries[]>({
+    queryKey: ['daily-active-registries'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('mv_daily_active_registries')
+        .select('*')
+        .order('day', { ascending: true })
+      if (error) throw error
+      return data as DailyActiveRegistries[]
+    },
+    staleTime: 300_000,
+  })
+}
+
 export function useDailyItems() {
   return useQuery<DailyItems[]>({
     queryKey: ['daily-items'],
@@ -334,7 +350,7 @@ export function usePeopleList() {
       if (error) throw error
       if (!data) return {
         summary: {
-          total_users: 0, users_with_items: 0, users_with_gifts: 0,
+          total_users: 0, users_with_items: 0, users_with_gifts: 0, co_parent_count: 0,
           avg_registry_value: 0, avg_items: 0, avg_completion: 0,
         },
         users: [],

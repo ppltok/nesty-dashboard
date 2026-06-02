@@ -16,6 +16,8 @@ export interface DashboardOverview {
   north_star_30d: number
   extension_users: number
   total_users_with_items: number
+  /** Registries with an accepted co-parent invitation (partner_id IS NOT NULL). */
+  co_parents_count: number
   // Previous period for trends
   prev_total_users: number
   prev_new_users: number
@@ -122,6 +124,11 @@ export interface DailyItems {
   via_manual: number
 }
 
+export interface DailyActiveRegistries {
+  day: string
+  active_registries: number
+}
+
 export interface DailyGifts {
   day: string
   gifts_confirmed: number
@@ -155,6 +162,16 @@ export interface PersonTopItem {
   original_url: string | null
 }
 
+export interface PersonCoParent {
+  id: string
+  email: string
+  display_name: string
+  first_name: string | null
+  last_name: string | null
+  signed_up_at: string
+  onboarding_completed: boolean
+}
+
 export interface PersonRow {
   id: string
   email: string
@@ -182,12 +199,15 @@ export interface PersonRow {
   completion_pct: number
   top_items: PersonTopItem[] | null
   last_item_at: string | null
+  /** The co-parent linked to this owner's registry, or null if none. */
+  co_parent: PersonCoParent | null
 }
 
 export interface PeopleSummary {
   total_users: number
   users_with_items: number
   users_with_gifts: number
+  co_parent_count: number
   avg_registry_value: number
   avg_items: number
   avg_completion: number
