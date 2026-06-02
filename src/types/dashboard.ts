@@ -33,6 +33,25 @@ export interface FunnelStage {
   count: number
 }
 
+/** 5-tier user funnel + behavioral flag matrix. See User-Tiers.md in the
+ *  Nesty Obsidian vault for tier and flag definitions. */
+export interface TierFunnel {
+  total_users: number
+  tiers: { tier: TierName; tier_order: number; users: number }[]
+  flags_overall: TierFlagCounts
+  flag_by_tier: ({ tier: TierName; tier_order: number; users: number } & TierFlagCounts)[]
+}
+
+export type TierName = 'user' | 'started' | 'active' | 'super' | 'champion'
+
+export interface TierFlagCounts {
+  has_coparent: number
+  sharer: number
+  network_reached: number
+  self_fulfiller: number
+  gift_received: number
+}
+
 export interface StoreBreakdown {
   store_domain: string
   store_display_name: string
