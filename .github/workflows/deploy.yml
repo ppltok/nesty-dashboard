@@ -1,0 +1,57 @@
+name: Deploy Dashboard to GitHub Pages
+
+# Builds from main and publishes to gh-pages. This is the single source of
+# truth for what reaches dashboard.nestyil.com — never push directly to
+# gh-pages or build/deploy locally, as that has historically caused drift
+# (source on main not matching deployed dist) and missing-env-var bugs
+# (manual builds without .env.local produce blank-page bundles).
+#
+# Required repository secrets:
+#   VITE_SUPABASE_URL       — Nesty Supabase project URL
+#   VITE_SUPABASE_ANON_KEY  — Supabase anon public key
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: "pages-deploy"
+  cancel-in-progress: false
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+        env:
+          NODE_ENV: production
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+
+      - name: Deploy to gh-pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: gh-pages
+          publish_dir: ./dist
+          cname: dashboard.nestyil.com
+          user_name: 'github-actions[bot]'
+          user_email: 'github-actions[bot]@users.noreply.github.com'
+          commit_message: 'Deploy: ${{ github.event.head_commit.message }}'
