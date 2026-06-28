@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
-import type { CollabMetrics } from '@/types/dashboard'
+import type { CollabMetrics, CollabUserRow } from '@/types/dashboard'
 import type {
   DashboardOverview,
   FunnelStage,
@@ -435,6 +435,22 @@ export function useCollabMetrics(start: Date, end: Date) {
       })
       if (error) throw error
       return (data ?? { collabs: [], daily: [] }) as CollabMetrics
+    },
+    staleTime: 60_000,
+  })
+}
+
+
+export function useCollabUsers(start: Date, end: Date) {
+  return useQuery<CollabUserRow[]>({
+    queryKey: ['collab-users', start.toISOString(), end.toISOString()],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('get_collab_user_breakdown', {
+        period_start: start.toISOString(),
+        period_end: end.toISOString(),
+      })
+      if (error) throw error
+      return (data ?? []) as CollabUserRow[]
     },
     staleTime: 60_000,
   })

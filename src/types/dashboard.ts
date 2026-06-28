@@ -310,3 +310,18 @@ export interface CollabMetrics {
   collabs: CollabSummary[]
   daily: CollabDaily[]
 }
+
+
+export interface CollabUserRow {
+  collab: string
+  email: string
+  first_name: string | null
+  emailed: number
+  email_clicks: number
+  views: number
+  reveals: number
+  copies: number
+  redeem_clicks: number
+  total_events: number
+  last_at: string
+}

@@ -64,3 +64,44 @@ as $$
 $$;
 
 grant execute on function public.get_collab_metrics(timestamptz, timestamptz) to anon, authenticated;
+
+
+-- Per-user activity breakdown for the Collabs page table. Resolves email via
+-- profiles (email_link_click rows only carry user_id). SECURITY DEFINER so the
+-- anon dashboard client can read past RLS on collab_events.
+create or replace function public.get_collab_user_breakdown(
+  period_start timestamptz,
+  period_end   timestamptz
+)
+returns jsonb
+language sql
+security definer
+set search_path = public
+as $$
+  with ev as (
+    select e.collab, e.event_type, e.created_at, e.user_id,
+           lower(coalesce(e.email, p.email)) as email, p.first_name
+    from collab_events e
+    left join profiles p on p.id = e.user_id
+    where e.created_at >= period_start and e.created_at <= period_end
+  ),
+  per_user as (
+    select
+      collab,
+      coalesce(email, '(anonymous)') as email,
+      max(first_name) as first_name,
+      count(*) filter (where event_type = 'email_sent')        as emailed,
+      count(*) filter (where event_type = 'email_link_click')  as email_clicks,
+      count(*) filter (where event_type in ('popup_view','card_view'))   as views,
+      count(*) filter (where event_type in ('popup_reveal','card_reveal')) as reveals,
+      count(*) filter (where event_type in ('popup_copy','card_copy'))   as copies,
+      count(*) filter (where event_type in ('popup_cta_click','card_cta_click','email_link_click')) as redeem_clicks,
+      count(*) as total_events,
+      max(created_at) as last_at
+    from ev
+    group by collab, coalesce(email, '(anonymous)')
+  )
+  select coalesce((select jsonb_agg(to_jsonb(per_user) order by last_at desc) from per_user), '[]'::jsonb);
+$$;
+
+grant execute on function public.get_collab_user_breakdown(timestamptz, timestamptz) to anon, authenticated;
