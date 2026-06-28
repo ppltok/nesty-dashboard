@@ -11,6 +11,7 @@ const PAGE_TITLES: Record<string, string> = {
   '/categories': 'Category Breakdown',
   '/extension': 'Chrome Extension',
   '/gifts': 'Gift Giver Insights',
+  '/collabs': 'Collabs',
   '/growth': 'Growth & Acquisition',
   '/timeline': 'Pregnancy Timeline',
   '/email': 'Email Marketing',

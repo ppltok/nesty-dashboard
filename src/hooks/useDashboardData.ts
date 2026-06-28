@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
+import type { CollabMetrics } from '@/types/dashboard'
 import type {
   DashboardOverview,
   FunnelStage,
@@ -421,4 +422,20 @@ export function useRefreshViews() {
     const { error } = await supabase.rpc('refresh_dashboard_views')
     if (error) throw error
   }
+}
+
+
+export function useCollabMetrics(start: Date, end: Date) {
+  return useQuery<CollabMetrics>({
+    queryKey: ['collab-metrics', start.toISOString(), end.toISOString()],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('get_collab_metrics', {
+        period_start: start.toISOString(),
+        period_end: end.toISOString(),
+      })
+      if (error) throw error
+      return (data ?? { collabs: [], daily: [] }) as CollabMetrics
+    },
+    staleTime: 60_000,
+  })
 }
