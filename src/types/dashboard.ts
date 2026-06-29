@@ -279,6 +279,8 @@ export interface UserJourneyTiming {
 export interface CollabSummary {
   collab: string
   emails_sent: number
+  email_opens: number
+  unique_opens: number
   email_clicks: number
   popup_views: number
   popup_reveals: number
@@ -299,6 +301,7 @@ export interface CollabDaily {
   day: string
   collab: string
   emails_sent: number
+  email_opens: number
   email_clicks: number
   views: number
   reveals: number
@@ -317,6 +320,7 @@ export interface CollabUserRow {
   email: string
   first_name: string | null
   emailed: number
+  opens: number
   email_clicks: number
   views: number
   reveals: number

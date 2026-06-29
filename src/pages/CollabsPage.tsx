@@ -41,6 +41,7 @@ function UserTable({ users, collab }: { users: CollabUserRow[]; collab: string }
                 Email: u.email,
                 Name: u.first_name ?? '',
                 Emailed: u.emailed,
+                Opens: u.opens,
                 'Email Clicks': u.email_clicks,
                 'In-app Views': u.views,
                 'Code Copies': u.copies,
@@ -61,6 +62,7 @@ function UserTable({ users, collab }: { users: CollabUserRow[]; collab: string }
             <tr className="bg-gray-50 text-left text-gray-500">
               <th className="px-4 py-2.5 font-medium">User</th>
               <th className="px-3 py-2.5 font-medium text-center" title="Gift email sent">Emailed</th>
+              <th className="px-3 py-2.5 font-medium text-center" title="Opened the email (pixel; directional)">Opened</th>
               <th className="px-3 py-2.5 font-medium text-center" title="Clicked the email CTA">Email Click</th>
               <th className="px-3 py-2.5 font-medium text-center" title="Saw the in-app popup / card">Viewed</th>
               <th className="px-3 py-2.5 font-medium text-center" title="Copied the NESTY15 code">Copied</th>
@@ -76,6 +78,7 @@ function UserTable({ users, collab }: { users: CollabUserRow[]; collab: string }
                   {u.first_name && <div className="text-xs text-gray-400">{u.first_name}</div>}
                 </td>
                 <td className="px-3 py-2.5 text-center"><Num v={u.emailed} /></td>
+                <td className="px-3 py-2.5 text-center"><Num v={u.opens} /></td>
                 <td className="px-3 py-2.5 text-center"><Num v={u.email_clicks} /></td>
                 <td className="px-3 py-2.5 text-center"><Num v={u.views} /></td>
                 <td className="px-3 py-2.5 text-center"><Num v={u.copies} /></td>
@@ -100,6 +103,7 @@ function UserTable({ users, collab }: { users: CollabUserRow[]; collab: string }
 function CollabBody({ summary, daily, users }: { summary: CollabSummary; daily: CollabDaily[]; users: CollabUserRow[] }) {
   const funnel = [
     { name: 'Email Sent', value: summary.emails_sent },
+    { name: 'Email Open', value: summary.unique_opens },
     { name: 'Email Click', value: summary.email_clicks },
     { name: 'Gift Viewed', value: summary.total_views },
     { name: 'Code Copied', value: summary.total_copies },
@@ -110,6 +114,7 @@ function CollabBody({ summary, daily, users }: { summary: CollabSummary; daily: 
     .filter((d) => d.collab === summary.collab)
     .map((d) => ({
       day: d.day,
+      Opens: d.email_opens,
       'Email Click': d.email_clicks,
       Views: d.views,
       Copies: d.copies,
@@ -121,6 +126,12 @@ function CollabBody({ summary, daily, users }: { summary: CollabSummary; daily: 
       {/* KPIs */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <KPICard title="Emails Sent" value={formatNumber(summary.emails_sent)} icon={<Send className="h-5 w-5 text-blue-500" />} />
+        <KPICard
+          title="Open Rate"
+          value={formatPercent(rate(summary.unique_opens, summary.emails_sent))}
+          subtitle={`${formatNumber(summary.unique_opens)} opened · pixel, directional`}
+          icon={<Eye className="h-5 w-5 text-sky-500" />}
+        />
         <KPICard
           title="Email Click Rate"
           value={formatPercent(rate(summary.email_clicks, summary.emails_sent))}
@@ -160,6 +171,7 @@ function CollabBody({ summary, daily, users }: { summary: CollabSummary; daily: 
               data={trend}
               xKey="day"
               bars={[
+                { key: 'Opens', color: '#0ea5e9', label: 'Opens', stackId: 'a' },
                 { key: 'Email Click', color: '#3b82f6', label: 'Email Click', stackId: 'a' },
                 { key: 'Views', color: '#10b981', label: 'Views', stackId: 'a' },
                 { key: 'Copies', color: '#f59e0b', label: 'Copies', stackId: 'a' },
